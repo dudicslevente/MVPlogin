@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Schedule Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        // Auth gate and deferred app load
+        window.BLOCK_APP_INIT = true;
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const session = await getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                await loadAppStateAndSync();
+                // Dynamically load app.js, then initialize
+                const script = document.createElement('script');
+                script.src = 'app.js';
+                script.onload = () => {
+                    window.BLOCK_APP_INIT = false;
+                    if (typeof ScheduleManager !== 'undefined') {
+                        window.scheduleManager = new ScheduleManager();
+                    }
+                };
+                document.body.appendChild(script);
+            } catch (e) {
+                console.error('Auth gate error', e);
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i data-feather="calendar" class="mr-2 text-blue-600"></i>
+                    <span class="text-xl font-bold text-gray-800">Schedule Manager</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showPage('schedule')"
+                        class="nav-btn active px-3 py-2 rounded-md text-sm font-medium">
+                        <i data-feather="calendar" class="w-4 h-4 mr-1"></i>
+                        Schedule
+                    </button>
+                    <button onclick="showPage('employees')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium">
+                        <i data-feather="users" class="w-4 h-4 mr-1"></i>
+                        Employees
+                    </button>
+                    <button onclick="showPage('statistics')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium">
+                        <i data-feather="bar-chart-2" class="w-4 h-4 mr-1"></i>
+                        Statistics
+                    </button>
+                    <a href="profile.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                        <i data-feather="user" class="w-4 h-4 mr-1"></i>
+                        Profile
+                    </a>
+                    <button onclick="logoutUser()" class="px-3 py-2 rounded-md text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 flex items-center">
+                        <i data-feather="log-out" class="w-4 h-4 mr-1"></i>
+                        Logout
+                    </button>
+                    <button onclick="toggleDarkMode()"
+                        class="p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                        title="Toggle Dark Mode">
+                        <i data-feather="moon" class="w-5 h-5" id="darkModeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Schedule Page -->
+    <div id="schedulePage" class="page active">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i data-feather="calendar" class="mr-2"></i>
+                    Schedule Manager
+                </h1>
+                <div class="flex space-x-4">
+                    <button onclick="importSchedule()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center">
+                        <i data-feather="upload" class="mr-2"></i>
+                        Import
+                    </button>
+                    <button onclick="exportSchedule()"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center">
+                        <i data-feather="download" class="mr-2"></i>
+                        Export
+                    </button>
+                    <button onclick="saveSchedule()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                        <i data-feather="save" class="mr-2"></i>
+                        Save Schedule
+                    </button>
+                    <button onclick="printSchedule()"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center">
+                        <i data-feather="printer" class="mr-2"></i>
+                        Print
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- Controls -->
+            <div class="mb-6 bg-white p-4 rounded-lg shadow">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="navigateTime('prev')"
+                                class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                                <i data-feather="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <div class="text-center min-w-[200px]">
+                                <div class="text-sm font-medium text-gray-700" id="currentPeriodLabel">Current Week
+                                </div>
+                                <div class="text-xs text-gray-500" id="currentPeriodDates">Loading...</div>
+                            </div>
+                            <button onclick="navigateTime('next')"
+                                class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                                <i data-feather="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="copyWeek()"
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center">
+                            <i data-feather="copy" class="mr-2"></i>
+                            Copy Week
+                        </button>
+                        <button onclick="pasteWeek()"
+                            class="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 flex items-center"
+                            disabled id="pasteBtn">
+                            <i data-feather="clipboard" class="mr-2"></i>
+                            Paste Week
+                        </button>
+                        <button onclick="clearCurrentPeriod()"
+                            class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 flex items-center">
+                            <i data-feather="trash-2" class="mr-2"></i>
+                            <span id="clearButtonText">Clear Week</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Employee List -->
+                <div class="w-full lg:w-1/4 bg-white p-4 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Employees</h2>
+                        <button onclick="showPage('employees')"
+                            class="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200">
+                            <i data-feather="plus"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-2" id="employeeList">
+                        <!-- Employee cards will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Schedule Grid -->
+                <div class="w-full lg:w-3/4 bg-white p-4 rounded-lg shadow overflow-x-auto">
+                    <div class="mb-4 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">Schedule</h2>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="switchView('week')" id="weekViewBtn"
+                                class="view-btn active px-3 py-1 rounded-md text-sm">
+                                Week View
+                            </button>
+                            <button onclick="switchView('month')" id="monthViewBtn"
+                                class="view-btn px-3 py-1 rounded-md text-sm">
+                                Month View
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Week View -->
+                    <div id="weekView" class="schedule-view active">
+                        <div class="schedule-grid border rounded-lg overflow-hidden" id="weekGrid">
+                            <!-- Week grid will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Month View -->
+                    <div id="monthView" class="schedule-view">
+                        <div class="month-grid" id="monthGrid">
+                            <!-- Month grid will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Employees Page -->
+    <div id="employeesPage" class="page">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i data-feather="users" class="mr-2"></i>
+                    Employee Management
+                </h1>
+                <div class="flex space-x-3">
+                    <button onclick="openDepartmentModal()"
+                        class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center">
+                        <i data-feather="settings" class="mr-2"></i>
+                        Manage Departments
+                    </button>
+                    <button onclick="openEmployeeModal()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                        <i data-feather="plus" class="mr-2"></i>
+                        Add Employee
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-gray-900">Employees</h2>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" id="employeeSearch" placeholder="Search employees..." class="form-input">
+                            <select id="departmentFilter" class="form-select">
+                                <option value="">All Departments</option>
+                                <option value="sales">Sales</option>
+                                <option value="kitchen">Kitchen</option>
+                                <option value="service">Service</option>
+                                <option value="management">Management</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Employee</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Department</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Hours/Week</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Base Pay</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Vacation Days</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Employee rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Statistics Page -->
+    <div id="statisticsPage" class="page">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i data-feather="bar-chart-2" class="mr-2"></i>
+                    Statistics & Analytics
+                </h1>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <i data-feather="users" class="text-blue-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Employees</p>
+                            <p class="text-2xl font-semibold text-gray-900" id="totalEmployees">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <i data-feather="clock" class="text-green-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Hours This Week</p>
+                            <p class="text-2xl font-semibold text-gray-900" id="totalHours">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <i data-feather="calendar-x" class="text-yellow-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Vacation Days</p>
+                            <p class="text-2xl font-semibold text-gray-900" id="vacationDays">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-red-100 rounded-lg">
+                            <i data-feather="alert-circle" class="text-red-600"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Sick Days</p>
+                            <p class="text-2xl font-semibold text-gray-900" id="sickDays">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Analytics -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Hours by Department</h3>
+                    <div id="departmentChart" class="h-64 flex items-center justify-center text-gray-500">
+                        Chart will be displayed here
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Weekly Schedule Overview</h3>
+                    <div id="weeklyChart" class="h-64 flex items-center justify-center text-gray-500">
+                        Chart will be displayed here
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Performance Table -->
+            <div class="mt-8 bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Employee Performance</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Employee</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Hours This Week</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Hours This Month</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Overtime Hours</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Attendance Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performanceTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Performance rows will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Employee Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold" id="modalTitle">Add Employee</h3>
+                <button onclick="closeEmployeeModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <form id="employeeForm" class="space-y-4">
+                <div class="flex justify-center mb-4">
+                    <div class="relative">
+                        <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden"
+                            id="profilePicPreview">
+                            <i data-feather="user" class="w-12 h-12 text-gray-400"></i>
+                        </div>
+                        <button type="button" onclick="document.getElementById('profilePicInput').click()"
+                            class="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 hover:bg-blue-700">
+                            <i data-feather="camera" class="w-4 h-4"></i>
+                        </button>
+                        <input type="file" id="profilePicInput" accept="image/*" class="hidden"
+                            onchange="handleProfilePicChange(event)">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" id="firstName" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" id="lastName" class="form-input" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" id="phone" class="form-input">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <select id="department" class="form-select" required>
+                            <option value="">Select Department</option>
+                            <!-- Departments will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                        <input type="text" id="position" class="form-input" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Min Hours/Week</label>
+                        <input type="number" id="minHours" class="form-input" min="0" max="168">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Hours/Week</label>
+                        <input type="number" id="maxHours" class="form-input" min="0" max="168">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Base Pay ($/hour)</label>
+                        <input type="number" id="basePay" class="form-input" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime Premium (%)</label>
+                        <input type="number" id="overtimePremium" class="form-input" min="0" step="0.1" value="50">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Vacation Days/Year</label>
+                        <input type="number" id="vacationDaysPerYear" class="form-input" min="0" value="14">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sick Days/Year</label>
+                        <input type="number" id="sickDaysPerYear" class="form-input" min="0" value="5">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Work Types/Roles</label>
+                    <input type="text" id="workTypes" class="form-input"
+                        placeholder="e.g., Server, Cashier, Kitchen Prep">
+                    <p class="text-xs text-gray-500 mt-1">Separate multiple roles with commas</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Custom Fields</label>
+                    <textarea id="customFields" class="form-input" rows="3"
+                        placeholder="Additional employee information..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Employee Color</label>
+                    <div class="flex items-center space-x-3">
+                        <input type="color" id="employeeColor"
+                            class="w-12 h-8 rounded border border-gray-300 cursor-pointer" value="#3b82f6">
+                        <span class="text-sm text-gray-500">Choose a color to identify this employee on the
+                            schedule</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="isActive"
+                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                    <label for="isActive" class="ml-2 text-sm text-gray-700">Active Employee</label>
+                </div>
+            </form>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeEmployeeModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="saveEmployee()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Save Employee
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shift Modal -->
+    <div id="shiftModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold">Shift Details</h3>
+                <button onclick="closeShiftModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <form id="shiftForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                    <select id="shiftEmployee" class="form-select" required>
+                        <option value="">Select Employee</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <input type="time" id="startTime" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                        <input type="time" id="endTime" class="form-input" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Position/Role</label>
+                    <input type="text" id="shiftPosition" class="form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Shift Type</label>
+                    <select id="shiftType" class="form-select" required>
+                        <option value="regular">Regular Shift</option>
+                        <option value="vacation">Vacation</option>
+                        <option value="sick">Sick Day</option>
+                        <option value="holiday">Holiday</option>
+                        <option value="training">Training</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea id="shiftNotes" class="form-input" rows="3"></textarea>
+                </div>
+            </form>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeShiftModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="deleteShift()" id="deleteShiftBtn"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700" style="display: none;">
+                    Delete
+                </button>
+                <button onclick="saveShift()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    Save Shift
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold">Import Schedule</h3>
+                <button onclick="closeImportModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select File</label>
+                    <input type="file" id="importFile" accept=".json,.csv" class="form-input">
+                    <p class="text-xs text-gray-500 mt-1">Supported formats: JSON, CSV</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-md">
+                    <h4 class="text-sm font-medium text-blue-800 mb-2">Import Instructions:</h4>
+                    <ul class="text-xs text-blue-700 space-y-1">
+                        <li>• JSON: Export from this application or compatible format</li>
+                        <li>• CSV: Employee, Date, Start Time, End Time, Position, Type</li>
+                        <li>• Existing schedules will be merged with imported data</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeImportModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="processImport()"
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    Import
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Management Modal -->
+    <div id="departmentModal" class="modal">
+        <div class="modal-content max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold">Manage Departments</h3>
+                <button onclick="closeDepartmentModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Add New Department</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="newDepartmentName" placeholder="Department name"
+                            class="form-input flex-1">
+                        <button onclick="addDepartment()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <i data-feather="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Existing Departments</label>
+                    <div id="departmentList" class="space-y-2 max-h-60 overflow-y-auto">
+                        <!-- Department list will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeDepartmentModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content max-w-md">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-yellow-100 rounded-lg mr-3">
+                    <i data-feather="alert-triangle" class="text-yellow-600 w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900" id="confirmationTitle">Confirm Action</h3>
+            </div>
+            <p class="text-gray-600 mb-6" id="confirmationMessage">Are you sure you want to proceed?</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="cancelConfirmation()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="confirmAction()" id="confirmButton"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Notifications will be added here -->
+    </div>
+
+</body>
+
+</html>
