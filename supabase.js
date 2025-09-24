@@ -77,6 +77,7 @@ async function cloudSyncSave() {
       scheduleManager_employees: JSON.parse(localStorage.getItem('scheduleManager_employees') || '[]'),
       scheduleManager_schedules: JSON.parse(localStorage.getItem('scheduleManager_schedules') || '{}'),
       scheduleManager_departments: JSON.parse(localStorage.getItem('scheduleManager_departments') || '[]'),
+      scheduleManager_theme: localStorage.getItem('scheduleManager_theme') || 'light',
     };
     const { error } = await window.supabaseClient.from('app_state').upsert({ user_id: userId, data: payload }).select();
     if (error) throw error;
