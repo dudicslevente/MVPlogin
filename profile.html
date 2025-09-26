@@ -65,6 +65,16 @@
           <input id="avatarUrl" type="hidden" />
           <p class="text-xs text-gray-500 mt-1">Upload an image; it will be stored securely and its public link saved to your profile.</p>
         </div>
+        <!-- Currency preference -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+          <select id="currencySelect" class="form-select w-48">
+            <option value="Ft">Ft</option>
+            <option value="€">€</option>
+            <option value="$">$</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">Used for displaying pay rates and related amounts.</p>
+        </div>
         <div id="statusBox" class="hidden text-sm"></div>
         <div class="flex gap-3">
           <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save Changes</button>
@@ -109,6 +119,12 @@
         preview.style.display = 'none';
         if (placeholder) placeholder.style.display = 'block';
       }
+      // Init currency select from localStorage (synced via app_state)
+      try {
+        const cur = localStorage.getItem('scheduleManager_currency') || '$';
+        const sel = document.getElementById('currencySelect');
+        if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : '$';
+      } catch (_) {}
     }
 
     // Upload when a file is selected
@@ -162,6 +178,13 @@
         .from('profiles')
         .upsert({ id: userId, username, display_name, avatar_url })
         .select();
+
+      // Save currency preference locally and sync to cloud state
+      try {
+        const currency = (document.getElementById('currencySelect') && document.getElementById('currencySelect').value) || '$';
+        localStorage.setItem('scheduleManager_currency', currency);
+        if (typeof window.cloudSyncSave === 'function') await window.cloudSyncSave();
+      } catch (_) {}
 
       if (error) {
         const isUnique = error.code === '23505' || (error.message || '').toLowerCase().includes('duplicate');

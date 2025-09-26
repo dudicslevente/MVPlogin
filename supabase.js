@@ -62,6 +62,7 @@ async function loadAppStateAndSync() {
     if (d.scheduleManager_employees) localStorage.setItem('scheduleManager_employees', JSON.stringify(d.scheduleManager_employees));
     if (d.scheduleManager_schedules) localStorage.setItem('scheduleManager_schedules', JSON.stringify(d.scheduleManager_schedules));
     if (d.scheduleManager_departments) localStorage.setItem('scheduleManager_departments', JSON.stringify(d.scheduleManager_departments));
+    if (d.scheduleManager_currency) localStorage.setItem('scheduleManager_currency', d.scheduleManager_currency);
   } else {
     // No remote yet: push current local into remote (or empty defaults)
     await cloudSyncSave();
@@ -78,6 +79,7 @@ async function cloudSyncSave() {
       scheduleManager_schedules: JSON.parse(localStorage.getItem('scheduleManager_schedules') || '{}'),
       scheduleManager_departments: JSON.parse(localStorage.getItem('scheduleManager_departments') || '[]'),
       scheduleManager_theme: localStorage.getItem('scheduleManager_theme') || 'light',
+      scheduleManager_currency: localStorage.getItem('scheduleManager_currency') || '$',
     };
     const { error } = await window.supabaseClient.from('app_state').upsert({ user_id: userId, data: payload }).select();
     if (error) throw error;

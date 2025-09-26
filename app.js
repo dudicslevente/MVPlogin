@@ -86,6 +86,13 @@ class ScheduleManager {
         this.showNotification(`Switched to ${this.isDarkMode ? 'dark' : 'light'} mode`, 'info');
     }
 
+    // Helper to get display name (nickname first)
+    getEmployeeDisplayName(employee) {
+        if (!employee) return 'Employee';
+        const fullName = (employee.name && employee.name.trim()) || [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim();
+        return (employee.nickname && employee.nickname.trim()) ? employee.nickname.trim() : (fullName || 'Employee');
+    }
+
     saveData() {
         localStorage.setItem('scheduleManager_employees', JSON.stringify(this.employees));
         localStorage.setItem('scheduleManager_schedules', JSON.stringify(this.schedules));
@@ -290,6 +297,23 @@ class ScheduleManager {
                 this.closeAllModals();
             }
         });
+
+        // Auto-fill shift times based on selected employee defaults
+        const shiftEmployeeSelect = document.getElementById('shiftEmployee');
+        if (shiftEmployeeSelect) {
+            shiftEmployeeSelect.addEventListener('change', () => {
+                const empId = String(shiftEmployeeSelect.value || '');
+                const emp = this.employees.find(e => String(e.id) === empId);
+                if (emp) {
+                    const startEl = document.getElementById('startTime');
+                    const endEl = document.getElementById('endTime');
+                    if (startEl) startEl.value = emp.defaultStartTime || '08:00';
+                    if (endEl) endEl.value = emp.defaultEndTime || '16:00';
+                    const posEl = document.getElementById('shiftPosition');
+                    if (posEl && !posEl.value) posEl.value = emp.position || '';
+                }
+            });
+        }
     }    // N
 avigation
     showPage(page) {
@@ -423,19 +447,10 @@ avigation
             }
             
             card.innerHTML = `
-                <div class="employee-pic-container">
-                    <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center" style="border: 2px solid ${employee.customColor || '#e5e7eb'}">
-                        ${employee.profilePic ? 
-                            `<img src="${employee.profilePic}" alt="${employee.firstName}" class="w-full h-full object-cover">` :
-                            `<i data-feather="user" class="w-4 h-4 text-gray-400"></i>`
-                        }
-                    </div>
-                </div>
                 <div class="employee-info">
-                    <div class="employee-name">${employee.firstName} ${employee.lastName}</div>
+                    <div class="employee-name">${this.getEmployeeDisplayName(employee)}</div>
                     <div class="employee-position">${employee.position}</div>
                 </div>
-                <div class="w-3 h-3 rounded-full" style="background-color: ${employee.customColor || '#3b82f6'}; margin-left: auto; flex-shrink: 0;"></div>
             `;
             
             container.appendChild(card);
@@ -526,7 +541,7 @@ avigation
     }
 
     createDayShift(shift) {
-        const employee = this.employees.find(emp => emp.id === shift.employeeId);
+        const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
         if (!employee) return document.createElement('div');
         
         const shiftElement = document.createElement('div');
@@ -554,7 +569,7 @@ avigation
         }
         
         shiftElement.innerHTML = `
-            <div class="day-shift-employee">${employee.firstName} ${employee.lastName}</div>
+            <div class="day-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
             <div class="day-shift-time">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
             <div class="day-shift-position">${shift.position}</div>
             <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -597,6 +612,13 @@ avigation
     formatTime(time24) {
         // Return military time format (24-hour)
         return time24;
+    }
+
+    // Currency helpers
+    getCurrencySymbol() {
+        const cur = (typeof localStorage !== 'undefined' && localStorage.getItem('scheduleManager_currency')) || '$';
+        if (cur === 'Ft' || cur === '€' || cur === '$') return cur;
+        return '$';
     }
 
     hexToRgb(hex) {
@@ -734,7 +756,7 @@ avigation
     }
 
     createShiftCard(shift, compact = false) {
-        const employee = this.employees.find(emp => emp.id === shift.employeeId);
+        const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
         if (!employee) return document.createElement('div');
         
         const card = document.createElement('div');
@@ -745,17 +767,25 @@ avigation
         card.draggable = true;
         
         if (compact) {
+            // Month view: show only the employee name (no time)
             card.innerHTML = `
                 <div class="text-xs truncate">
-                    ${employee.firstName} ${employee.lastName}
+                    <span class="font-medium">${this.getEmployeeDisplayName(employee)}</span>
                 </div>
             `;
+            // Apply employee-assigned color for compact (month) cards
+            if (employee.customColor && shift.type === 'regular') {
+                const rgb = this.hexToRgb(employee.customColor);
+                card.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`;
+                card.style.border = `1px solid rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            }
         } else {
             card.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div class="truncate">
-                        <div class="font-medium">${employee.firstName} ${employee.lastName}</div>
+                        <div class="font-medium">${this.getEmployeeDisplayName(employee)}</div>
                         <div class="text-xs opacity-75">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
+                        <div class="text-xs text-gray-700 truncate">${shift.position || ''}</div>
                     </div>
                     <button class="remove-shift text-xs opacity-50 hover:opacity-100 ml-1">
                         <i data-feather="x" class="w-3 h-3"></i>
@@ -828,25 +858,25 @@ avigation
                     this.moveShiftToDate(data.shiftId, data.originalDate, targetDate);
                 } else {
                     // Adding new employee shift
-                    const employeeId = parseInt(data.employeeId || e.dataTransfer.getData('text/plain'));
-                    const employee = this.employees.find(emp => emp.id === employeeId);
+                    const employeeId = String(data.employeeId || e.dataTransfer.getData('text/plain'));
+                    const employee = this.employees.find(emp => String(emp.id) === employeeId);
                     
                     if (employee) {
-                        const slotHour = slot.dataset.hour || '09:00';
-                        
+                        const start = employee.defaultStartTime || '08:00';
+                        const end = employee.defaultEndTime || '16:00';
                         const shift = {
                             id: this.generateId(),
                             employeeId: employee.id,
                             date: targetDate,
-                            startTime: this.convertTo24Hour(slotHour),
-                            endTime: this.addHours(this.convertTo24Hour(slotHour), 8),
+                            startTime: start,
+                            endTime: end,
                             position: employee.position,
                             type: 'regular',
                             notes: ''
                         };
                         
                         this.addShiftToAllViews(shift);
-                        this.showNotification(`Added ${employee.firstName} to ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
+                        this.showNotification(`Added ${this.getEmployeeDisplayName(employee)} to ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
                     }
                 }
                 
@@ -874,8 +904,8 @@ avigation
                         }
                         return;
                     }
-                    const employeeId = parseInt(evt.item.dataset.employeeId);
-                    const employee = this.employees.find(emp => emp.id === employeeId);
+                    const employeeId = String(evt.item.dataset.employeeId);
+                    const employee = this.employees.find(emp => String(emp.id) === employeeId);
                     
                     if (employee) {
                         let slotDate = date;
@@ -888,14 +918,14 @@ avigation
                             return;
                         }
                         
-                        const slotHour = slot.dataset.hour || '09:00';
-                        
+                        const start = employee.defaultStartTime || '08:00';
+                        const end = employee.defaultEndTime || '16:00';
                         const shift = {
                             id: this.generateId(),
                             employeeId: employee.id,
                             date: slotDate,
-                            startTime: this.convertTo24Hour(slotHour),
-                            endTime: this.addHours(this.convertTo24Hour(slotHour), 8),
+                            startTime: start,
+                            endTime: end,
                             position: employee.position,
                             type: 'regular',
                             notes: ''
@@ -904,7 +934,7 @@ avigation
                         this.addShiftToAllViews(shift);
                         evt.item.remove();
                         this.renderSchedule();
-                        this.showNotification(`Added ${employee.firstName} to ${this.formatDateDisplay(new Date(slotDate + 'T00:00:00'))}`, 'success');
+                        this.showNotification(`Added ${this.getEmployeeDisplayName(employee)} to ${this.formatDateDisplay(new Date(slotDate + 'T00:00:00'))}`, 'success');
                     }
                 }
             });
@@ -1003,8 +1033,8 @@ avigation
         // Save and refresh
         this.saveData();
         
-        const employee = this.employees.find(emp => emp.id === foundShift.employeeId);
-        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Employee';
+        const employee = this.employees.find(emp => String(emp.id) === String(foundShift.employeeId));
+        const employeeName = this.getEmployeeDisplayName(employee);
         this.showNotification(`Moved ${employeeName} to ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
     }
 
@@ -1054,13 +1084,13 @@ avigation
         this.employees.filter(emp => emp.isActive).forEach(employee => {
             const option = document.createElement('option');
             option.value = employee.id;
-            option.textContent = `${employee.firstName} ${employee.lastName}`;
+            option.textContent = `${this.getEmployeeDisplayName(employee)}`;
             employeeSelect.appendChild(option);
         });
         
         if (shift) {
             // Edit mode
-            document.getElementById('shiftEmployee').value = shift.employeeId;
+            document.getElementById('shiftEmployee').value = String(shift.employeeId);
             document.getElementById('startTime').value = shift.startTime;
             document.getElementById('endTime').value = shift.endTime;
             document.getElementById('shiftPosition').value = shift.position;
@@ -1090,7 +1120,7 @@ avigation
         const form = document.getElementById('shiftForm');
         const formData = new FormData(form);
         
-        const employeeId = parseInt(document.getElementById('shiftEmployee').value);
+        const employeeId = String(document.getElementById('shiftEmployee').value);
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const position = document.getElementById('shiftPosition').value;
@@ -1127,8 +1157,8 @@ avigation
     deleteShift() {
         if (!this.editingShift) return;
         
-        const employee = this.employees.find(emp => emp.id === this.editingShift.employeeId);
-        const employeeName = employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee';
+        const employee = this.employees.find(emp => String(emp.id) === String(this.editingShift.employeeId));
+        const employeeName = this.getEmployeeDisplayName(employee) || 'Unknown Employee';
         
         this.showConfirmation(
             'Delete Shift',
@@ -1156,19 +1186,19 @@ avigation
                     <div class="flex items-center">
                         <div class="w-8 h-8 rounded-full ${employee.color} flex items-center justify-center mr-3 overflow-hidden">
                             ${employee.profilePic ? 
-                                `<img src="${employee.profilePic}" alt="${employee.firstName}" class="w-full h-full object-cover">` :
+                                `<img src="${employee.profilePic}" alt="${this.getEmployeeDisplayName(employee)}" class="w-full h-full object-cover">` :
                                 `<i data-feather="user" class="w-4 h-4"></i>`
                             }
                         </div>
                         <div>
-                            <div class="text-sm font-medium text-gray-900">${employee.firstName} ${employee.lastName}</div>
+                            <div class="text-sm font-medium text-gray-900">${this.getEmployeeDisplayName(employee)}</div>
                             <div class="text-sm text-gray-500">${employee.email}</div>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.department}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.minHours} - ${employee.maxHours}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$${employee.basePay}/hr</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${this.getCurrencySymbol()}${employee.basePay}/hr</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.vacationDaysPerYear}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -1177,10 +1207,10 @@ avigation
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
-                        <button onclick="scheduleManager.editEmployee(${employee.id})" class="action-btn edit" title="Edit Employee">
+                        <button onclick="scheduleManager.editEmployee('${employee.id}')" class="action-btn edit" title="Edit Employee">
                             <i data-feather="edit-2" class="w-4 h-4"></i>
                         </button>
-                        <button onclick="scheduleManager.deleteEmployee(${employee.id})" class="action-btn delete" title="Delete Employee">
+                        <button onclick="scheduleManager.deleteEmployee('${employee.id}')" class="action-btn delete" title="Delete Employee">
                             <i data-feather="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -1204,8 +1234,9 @@ avigation
             document.getElementById('modalTitle').textContent = 'Edit Employee';
             
             // Populate form
-            document.getElementById('firstName').value = employee.firstName;
-            document.getElementById('lastName').value = employee.lastName;
+            const fullName = (employee.name && employee.name.trim()) || [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim();
+            document.getElementById('name').value = fullName;
+            document.getElementById('nickname').value = employee.nickname || '';
             document.getElementById('email').value = employee.email;
             document.getElementById('phone').value = employee.phone;
             document.getElementById('department').value = employee.department;
@@ -1216,7 +1247,6 @@ avigation
             document.getElementById('overtimePremium').value = employee.overtimePremium;
             document.getElementById('vacationDaysPerYear').value = employee.vacationDaysPerYear;
             document.getElementById('sickDaysPerYear').value = employee.sickDaysPerYear;
-            document.getElementById('workTypes').value = employee.workTypes.join(', ');
             document.getElementById('customFields').value = employee.customFields;
             document.getElementById('isActive').checked = employee.isActive;
         } else {
@@ -1228,6 +1258,15 @@ avigation
         }
         
         modal.classList.add('active');
+        // Ensure the modal starts at the top and focus the first field
+        const content = modal.querySelector('.modal-content');
+        if (content) {
+            content.scrollTop = 0;
+        }
+        const firstInput = document.getElementById('name');
+        if (firstInput) {
+            firstInput.focus({ preventScroll: true });
+        }
     }
 
     closeEmployeeModal() {
@@ -1240,8 +1279,8 @@ avigation
         
         const employee = {
             id: this.editingEmployee ? this.editingEmployee.id : this.generateId(),
-            firstName: document.getElementById('firstName').value,
-            lastName: document.getElementById('lastName').value,
+            name: document.getElementById('name').value,
+            nickname: document.getElementById('nickname').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
             department: document.getElementById('department').value,
@@ -1252,13 +1291,12 @@ avigation
             overtimePremium: parseFloat(document.getElementById('overtimePremium').value) || 50,
             vacationDaysPerYear: parseInt(document.getElementById('vacationDaysPerYear').value) || 0,
             sickDaysPerYear: parseInt(document.getElementById('sickDaysPerYear').value) || 0,
-            workTypes: document.getElementById('workTypes').value.split(',').map(s => s.trim()).filter(s => s),
             customFields: document.getElementById('customFields').value,
             isActive: document.getElementById('isActive').checked,
             color: this.editingEmployee ? this.editingEmployee.color : this.getNextEmployeeColor()
         };
         
-        if (!employee.firstName || !employee.lastName || !employee.email || !employee.department || !employee.position) {
+        if (!employee.name || !employee.department || !employee.position) {
             this.showNotification('Please fill in all required fields', 'error');
             return;
         }
@@ -1276,23 +1314,23 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
-        this.showNotification(`Employee ${employee.firstName} ${employee.lastName} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
+        this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
     }
 
     editEmployee(id) {
-        const employee = this.employees.find(emp => emp.id === id);
+        const employee = this.employees.find(emp => String(emp.id) === String(id));
         if (employee) {
             this.openEmployeeModal(employee);
         }
     }
 
     deleteEmployee(id) {
-        const employee = this.employees.find(emp => emp.id === id);
+        const employee = this.employees.find(emp => String(emp.id) === String(id));
         if (!employee) return;
         
         this.showConfirmation(
             'Delete Employee',
-            `Are you sure you want to delete ${employee.firstName} ${employee.lastName}? This will also remove all their scheduled shifts.`,
+            `Are you sure you want to delete ${this.getEmployeeDisplayName(employee)}? This will also remove all their scheduled shifts.`, 
             () => {
                 this.employees = this.employees.filter(emp => emp.id !== id);
                 
@@ -1300,7 +1338,7 @@ avigation
                 Object.keys(this.schedules).forEach(week => {
                     Object.keys(this.schedules[week]).forEach(date => {
                         this.schedules[week][date] = this.schedules[week][date].filter(
-                            shift => shift.employeeId !== id
+                            shift => String(shift.employeeId) !== String(id)
                         );
                     });
                 });
@@ -1309,7 +1347,7 @@ avigation
                 this.renderEmployeeTable();
                 this.renderEmployeeList();
                 this.renderSchedule();
-                this.showNotification(`Employee ${employee.firstName} ${employee.lastName} deleted successfully`, 'success');
+                this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} deleted successfully`, 'success');
             }
         );
     }
@@ -1727,7 +1765,7 @@ avigation
             
             weekSchedule[dateStr].forEach(shift => {
                 const duration = this.calculateShiftDuration(shift.startTime, shift.endTime);
-                const employee = this.employees.find(emp => emp.id === shift.employeeId);
+                const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 
                 if (shift.type === 'vacation') {
                     vacationDays++;
@@ -2060,7 +2098,7 @@ avigation
             `;
             
             dayShifts.forEach(shift => {
-                const employee = this.employees.find(emp => emp.id === shift.employeeId);
+                const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 if (employee) {
                     html += `
                         <div class="print-shift ${shift.type}">
@@ -2111,7 +2149,7 @@ avigation
             `;
             
             dayShifts.forEach(shift => {
-                const employee = this.employees.find(emp => emp.id === shift.employeeId);
+                const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 if (employee) {
                     html += `
                         <div class="print-shift ${shift.type}">
@@ -2381,8 +2419,9 @@ avigation
             document.getElementById('modalTitle').textContent = 'Edit Employee';
             
             // Populate form
-            document.getElementById('firstName').value = employee.firstName;
-            document.getElementById('lastName').value = employee.lastName;
+            const fullName = (employee.name && employee.name.trim()) || [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim();
+            document.getElementById('name').value = fullName;
+            document.getElementById('nickname').value = employee.nickname || '';
             document.getElementById('email').value = employee.email;
             document.getElementById('phone').value = employee.phone;
             document.getElementById('department').value = employee.department;
@@ -2393,10 +2432,19 @@ avigation
             document.getElementById('overtimePremium').value = employee.overtimePremium;
             document.getElementById('vacationDaysPerYear').value = employee.vacationDaysPerYear;
             document.getElementById('sickDaysPerYear').value = employee.sickDaysPerYear;
-            document.getElementById('workTypes').value = employee.workTypes.join(', ');
             document.getElementById('customFields').value = employee.customFields;
             document.getElementById('isActive').checked = employee.isActive;
+            // Default work time
+            const _dst = document.getElementById('defaultStartTime');
+            const _det = document.getElementById('defaultEndTime');
+            if (_dst) _dst.value = employee.defaultStartTime || '08:00';
+            if (_det) _det.value = employee.defaultEndTime || '16:00';
             document.getElementById('employeeColor').value = employee.customColor || '#3b82f6';
+            const _col = document.getElementById('employeeColor').value;
+            const _prevEl = document.getElementById('employeeColorPreview');
+            if (_prevEl) _prevEl.style.backgroundColor = _col;
+            const _hexEl = document.getElementById('employeeColorHex');
+            if (_hexEl) _hexEl.value = _col;
             
             // Set profile picture
             const preview = document.getElementById('profilePicPreview');
@@ -2413,6 +2461,19 @@ avigation
             document.getElementById('modalTitle').textContent = 'Add Employee';
             form.reset();
             document.getElementById('isActive').checked = true;
+            // Default work time for add mode
+            const _dst2 = document.getElementById('defaultStartTime');
+            const _det2 = document.getElementById('defaultEndTime');
+            if (_dst2) _dst2.value = '08:00';
+            if (_det2) _det2.value = '16:00';
+            // Reset color picker UI
+            const _defaultCol = '#3b82f6';
+            const _colorEl = document.getElementById('employeeColor');
+            if (_colorEl) _colorEl.value = _defaultCol;
+            const _prevEl2 = document.getElementById('employeeColorPreview');
+            if (_prevEl2) _prevEl2.style.backgroundColor = _defaultCol;
+            const _hexEl2 = document.getElementById('employeeColorHex');
+            if (_hexEl2) _hexEl2.value = _defaultCol;
             
             // Reset profile picture
             const preview = document.getElementById('profilePicPreview');
@@ -2421,6 +2482,18 @@ avigation
         }
         
         modal.classList.add('active');
+        // Ensure the modal starts at the top and focus the first field
+        const content = modal.querySelector('.modal-content');
+        if (content) {
+            content.scrollTop = 0;
+        }
+        const firstInput = document.getElementById('name');
+        if (firstInput) {
+            firstInput.focus({ preventScroll: true });
+        }
+        // Set currency symbol in Base Pay label (if present)
+        const curSpan = document.getElementById('basePayCurrency');
+        if (curSpan) curSpan.textContent = this.getCurrencySymbol();
         
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -2432,8 +2505,8 @@ avigation
         
         const employee = {
             id: this.editingEmployee ? this.editingEmployee.id : this.generateId(),
-            firstName: document.getElementById('firstName').value,
-            lastName: document.getElementById('lastName').value,
+            name: document.getElementById('name').value,
+            nickname: document.getElementById('nickname').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
             department: document.getElementById('department').value,
@@ -2444,15 +2517,16 @@ avigation
             overtimePremium: parseFloat(document.getElementById('overtimePremium').value) || 50,
             vacationDaysPerYear: parseInt(document.getElementById('vacationDaysPerYear').value) || 0,
             sickDaysPerYear: parseInt(document.getElementById('sickDaysPerYear').value) || 0,
-            workTypes: document.getElementById('workTypes').value.split(',').map(s => s.trim()).filter(s => s),
             customFields: document.getElementById('customFields').value,
             isActive: document.getElementById('isActive').checked,
             color: this.editingEmployee ? this.editingEmployee.color : this.getNextEmployeeColor(),
             customColor: document.getElementById('employeeColor').value,
-            profilePic: this.currentProfilePic
+            profilePic: this.currentProfilePic,
+            defaultStartTime: (document.getElementById('defaultStartTime') && document.getElementById('defaultStartTime').value) || '08:00',
+            defaultEndTime: (document.getElementById('defaultEndTime') && document.getElementById('defaultEndTime').value) || '16:00'
         };
         
-        if (!employee.firstName || !employee.lastName || !employee.email || !employee.department || !employee.position) {
+        if (!employee.name || !employee.department || !employee.position) {
             this.showNotification('Please fill in all required fields', 'error');
             return;
         }
@@ -2470,7 +2544,7 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
-        this.showNotification(`Employee ${employee.firstName} ${employee.lastName} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
+        this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
     }
 
     closeEmployeeModal() {
