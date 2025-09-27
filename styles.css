@@ -1091,3 +1091,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* Month view text color adjustments for theme contrast */
+/* Ensure employee names in month view are clearly readable: black in light mode, white in dark mode. */
+.month-day .shift-card { color: #000; }
+[data-theme="dark"] .month-day .shift-card { color: #fff; }
