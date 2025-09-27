@@ -220,7 +220,9 @@ class ScheduleManager {
     getCurrentWeek() {
         const now = new Date();
         const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        // Make Monday the first day of the week
+        const day = (startOfWeek.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+        startOfWeek.setDate(startOfWeek.getDate() - day);
         return this.formatDate(startOfWeek);
     }
 
@@ -248,7 +250,9 @@ class ScheduleManager {
     getWeekKey(date) {
         // Create a new date object to avoid modifying the original
         const startOfWeek = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        // Make Monday the first day of the week
+        const day = (startOfWeek.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+        startOfWeek.setDate(startOfWeek.getDate() - day);
         return this.formatDate(startOfWeek);
     }
 
@@ -487,7 +491,7 @@ avigation
         if (!container) return;
         
         const weekDates = this.getWeekDates(this.currentWeek);
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
         container.innerHTML = '';
         container.className = 'day-schedule';
@@ -658,19 +662,26 @@ avigation
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        // Align start to Monday of the first week shown
+        const firstDayIndex = (firstDay.getDay() + 6) % 7; // 0=Monday
+        startDate.setDate(startDate.getDate() - firstDayIndex);
         
         // Calculate how many weeks we need to show the full month
         const endDate = new Date(lastDay);
-        endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
-        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const lastDayIndex = (lastDay.getDay() + 6) % 7; // 0=Monday
+        endDate.setDate(endDate.getDate() + (6 - lastDayIndex));
+        // Use noon-based timestamps to avoid DST off-by-one errors
+        const startNoon = new Date(startDate); startNoon.setHours(12,0,0,0);
+        const endNoon = new Date(endDate); endNoon.setHours(12,0,0,0);
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const totalDays = Math.round((endNoon - startNoon) / msPerDay) + 1; // inclusive
         const weeksNeeded = Math.ceil(totalDays / 7);
         const daysToShow = Math.min(weeksNeeded * 7, 42); // Cap at 6 weeks maximum
         
         container.innerHTML = '';
         
         // Add day headers
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         dayNames.forEach(dayName => {
             const dayHeader = document.createElement('div');
             dayHeader.className = 'month-header';
@@ -1662,7 +1673,9 @@ avigation
     getWeekStart(dateStr) {
         const date = new Date(dateStr);
         const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay());
+        // Make Monday the first day of the week
+        const day = (startOfWeek.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+        startOfWeek.setDate(startOfWeek.getDate() - day);
         return this.formatDate(startOfWeek);
     }
 
@@ -1711,8 +1724,8 @@ avigation
         const employeeStats = {};
         const departmentStats = {};
         const weeklyStats = {
-            Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, 
-            Thursday: 0, Friday: 0, Saturday: 0
+            Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0,
+            Friday: 0, Saturday: 0, Sunday: 0
         };
         
         // Initialize employee stats
@@ -1757,7 +1770,7 @@ avigation
         
         // Calculate from current week
         const weekDates = this.getWeekDates(this.currentWeek);
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
         Object.keys(weekSchedule).forEach(dateStr => {
             const dayIndex = weekDates.indexOf(dateStr);
@@ -2080,7 +2093,7 @@ avigation
 
     generatePrintableWeekSchedule() {
         const weekDates = this.getWeekDates(this.currentWeek);
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
         let html = '<div class="print-schedule">';
         
@@ -2124,12 +2137,14 @@ avigation
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        // Align start to Monday for printable month view
+        const firstDayIndex = (firstDay.getDay() + 6) % 7; // 0=Monday
+        startDate.setDate(startDate.getDate() - firstDayIndex);
         
         let html = '<div class="print-schedule">';
         
         // Add day headers
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         dayNames.forEach(dayName => {
             html += `<div class="print-day-header" style="grid-column: span 1; text-align: center; font-weight: bold; padding: 10px; border: 1px solid #000;">${dayName}</div>`;
         });

@@ -270,8 +270,8 @@ body {
 }
 
 .month-day.other-month {
-    background-color: #f9fafb;
-    color: #9ca3af;
+    background-color: #ffffff;
+    opacity: 0.35;
 }
 
 .month-day.today {
@@ -839,6 +839,12 @@ body {
     border-color: var(--border-primary) !important;
 }
 
+/* Dark mode pale cells (days from other months) */
+[data-theme="dark"] .month-day.other-month {
+    background-color: #374151 !important; /* requested pale color */
+    opacity: 1 !important; /* avoid washed-out look in dark mode */
+}
+
 [data-theme="dark"] .month-header {
     background-color: var(--bg-tertiary) !important;
 }
@@ -867,6 +873,49 @@ body {
 
 [data-theme="dark"] .action-btn.delete:hover {
     background-color: #7f1d1d !important;
+}
+
+/* Additional dark mode refinements */
+[data-theme="dark"] .schedule-grid {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] .time-slot {
+    background-color: var(--bg-primary) !important;
+    border-right: 1px solid var(--border-primary) !important;
+    border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .time-slot:hover {
+    background-color: var(--bg-tertiary) !important;
+    box-shadow: inset 0 0 0 1px var(--border-primary) !important;
+}
+
+[data-theme="dark"] .time-slot.drag-over {
+    background-color: rgba(96, 165, 250, 0.18) !important; /* blue-400 @ ~18% */
+    border: 2px dashed #60a5fa !important; /* blue-400 */
+}
+
+[data-theme="dark"] .day-header,
+[data-theme="dark"] .time-header {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+    border-right: 1px solid var(--border-primary) !important;
+    border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .month-day.today {
+    background-color: rgba(245, 158, 11, 0.15) !important; /* amber-500 tint */
+    border-color: #f59e0b !important;
+}
+
+[data-theme="dark"] .month-header {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .day-schedule {
+    background-color: var(--bg-secondary) !important;
 }
 
 /* Dark mode toggle button */
