@@ -1850,7 +1850,7 @@ avigation
                             <i data-feather="user" class="w-4 h-4"></i>
                         </div>
                         <div class="text-sm font-medium text-gray-900">
-                            ${stat.employee.firstName} ${stat.employee.lastName}
+                            ${this.getEmployeeDisplayName(stat.employee)}
                         </div>
                     </div>
                 </td>
@@ -1995,54 +1995,64 @@ avigation
             <head>
                 <title>Schedule - ${this.formatDateDisplay(new Date(this.currentWeek + 'T00:00:00'))}</title>
                 <style>
+                    @page {
+                        size: A4 landscape;
+                        margin: 10mm;
+                    }
+                    html, body { height: 100%; }
                     body {
                         font-family: Arial, sans-serif;
-                        margin: 20px;
+                        margin: 0;
                         background: white;
                         color: black;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
                     .print-header {
                         text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 2px solid #000;
-                        padding-bottom: 10px;
+                        margin: 0 0 6mm 0;
+                        border-bottom: 1px solid #000;
+                        padding-bottom: 3mm;
                     }
                     .print-schedule {
                         display: grid;
                         grid-template-columns: repeat(7, 1fr);
-                        gap: 10px;
-                        margin-top: 20px;
+                        gap: 2mm;
+                        margin-top: 4mm;
                     }
                     .print-day {
                         border: 1px solid #000;
-                        padding: 10px;
-                        min-height: 300px;
+                        padding: 2mm;
+                        min-height: 40mm;
+                        break-inside: avoid;
+                        page-break-inside: avoid;
                     }
                     .print-day-header {
                         font-weight: bold;
                         text-align: center;
-                        border-bottom: 1px solid #ccc;
-                        padding-bottom: 5px;
-                        margin-bottom: 10px;
+                        border-bottom: 1px solid #000;
+                        padding-bottom: 1mm;
+                        margin-bottom: 2mm;
+                        font-size: 10pt;
                     }
                     .print-shift {
                         background: #f0f0f0;
-                        border: 1px solid #ccc;
-                        padding: 5px;
-                        margin-bottom: 5px;
-                        border-radius: 3px;
+                        border: 1px solid #999;
+                        padding: 1mm;
+                        margin-bottom: 1.5mm;
+                        border-radius: 1mm;
                     }
                     .print-shift-employee {
                         font-weight: bold;
-                        font-size: 12px;
+                        font-size: 9pt;
                     }
                     .print-shift-time {
-                        font-size: 11px;
-                        color: #666;
+                        font-size: 8pt;
+                        color: #333;
                     }
                     .print-shift-position {
-                        font-size: 10px;
-                        color: #888;
+                        font-size: 7.5pt;
+                        color: #555;
                     }
                     .print-shift.vacation {
                         background: #fff3cd;
@@ -2057,9 +2067,10 @@ avigation
                         border-color: #0dcaf0;
                     }
                     @media print {
+                        html, body { height: auto; }
                         body { margin: 0; }
-                        .print-schedule { gap: 5px; }
-                        .print-day { min-height: 250px; }
+                        .print-schedule { gap: 1.5mm; }
+                        .print-day { min-height: 35mm; }
                     }
                 </style>
             </head>
@@ -2115,7 +2126,7 @@ avigation
                 if (employee) {
                     html += `
                         <div class="print-shift ${shift.type}">
-                            <div class="print-shift-employee">${employee.firstName} ${employee.lastName}</div>
+                            <div class="print-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
                             <div class="print-shift-time">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
                             <div class="print-shift-position">${shift.position}</div>
                         </div>
@@ -2168,7 +2179,7 @@ avigation
                 if (employee) {
                     html += `
                         <div class="print-shift ${shift.type}">
-                            <div class="print-shift-employee">${employee.firstName} ${employee.lastName}</div>
+                            <div class="print-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
                         </div>
                     `;
                 }
