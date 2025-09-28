@@ -1,0 +1,119 @@
+Adatkezelési Tájékoztató
+
+Utolsó frissítés: 2025.09.28
+
+Ez az adatkezelési tájékoztató bemutatja, hogyan kezeli a Schedulix (a továbbiakban: Alkalmazás) a felhasználók és a munkavállalók személyes adatait.
+
+Mivel az Alkalmazás egyéni fejlesztő által működtetett demo rendszer, nem kereskedelmi célra készült, hanem kipróbálásra.
+
+1. Adatkezelők
+
+Név: Pothorszki Bence
+
+Email: bencepothorszki@gmail.com
+
+Név: Dudics Levente
+
+Email: levente@dudics.hu
+
+2. Kezelt adatok köre
+
+Az Alkalmazás a következő személyes adatokat kezeli:
+
+Regisztrált felhasználók adatai:
+
+Név
+
+E-mail cím
+
+Felhasználónév
+
+Profilkép (opcionális)
+
+Jelszó (titkosítva tárolva)
+
+Dolgozók (munkabeosztásban szereplő személyek) adatai:
+
+Név
+
+Műszak
+
+Részleg
+
+Pozíció
+
+E-mail cím
+
+Telefonszám
+
+Órabér
+
+Profilkép (opcionális)
+
+3. Az adatkezelés célja
+
+Belépés biztosítása az Alkalmazásba
+
+Munkabeosztás létrehozása és megjelenítése
+
+Kapcsolattartás a felhasználókkal
+
+4. Az adatkezelés jogalapja
+
+Az adatok kezelésének jogalapja a felhasználók önkéntes hozzájárulása (GDPR 6. cikk (1) a) pont).
+
+5. Az adatok tárolásának időtartama
+
+Az adatok a felhasználó regisztrációjának törléséig kerülnek megőrzésre.
+
+A törlés e-mailes kérésre történik.
+
+A regisztrált felhasználók az alkalmazáson belül hozzáférhetnek saját adataikhoz.
+
+6. Adatfeldolgozás és adattárolás
+
+Az adatok a Supabase felhő alapú adatbázisban kerülnek tárolásra.
+
+Az adatbázis biztonságos kapcsolaton keresztül érhető el.
+
+Az adatkezelő nem továbbítja harmadik félnek az adatokat.
+
+7. Az érintettek jogai
+
+A felhasználókat a GDPR alapján a következő jogok illetik meg:
+
+Hozzáférés joga: betekinthetnek az általuk megadott adatokba.
+
+Helyesbítés joga: kérhetik adataik módosítását.
+
+Törléshez való jog: kérhetik adataik végleges törlését emailben.
+
+Adatkezelés korlátozásának joga.
+
+Adathordozhatóság joga.
+
+Tiltakozás joga az adatkezelés ellen.
+
+A kérelmeket az adatkezelő email címére kell benyújtani.
+
+8. Panasz benyújtása
+
+Amennyiben a felhasználó úgy véli, hogy személyes adatait jogellenesen kezelik, panaszt tehet:
+
+Nemzeti Adatvédelmi és Információszabadság Hatóságnál (NAIH)
+
+Cím: 1055 Budapest, Falk Miksa utca 9-11.
+
+Web: https://naih.hu
+
+9. Sütik és nyomkövetés
+
+Az Alkalmazás nem használ sütiket és nyomkövetési technológiát.
+
+10. Adatbiztonság
+
+A jelszavak titkosított formában kerülnek tárolásra.
+
+Az adatbázis és a kommunikáció titkosított (HTTPS).
+
+Az adatokhoz csak az adatkezelők férhetnek hozzá.

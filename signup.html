@@ -54,6 +54,12 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">Jelszó Megerősítése</label>
           <input id="password2" type="password" class="form-input" placeholder="Ismételd meg a jelszót" required />
         </div>
+        <div class="flex items-start space-x-2">
+          <input id="privacyPolicy" type="checkbox" class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required />
+          <label for="privacyPolicy" class="text-sm text-gray-700">
+            Elolvastam és elfogadom az <a href="/adatkezelesi-nyilatkozat.txt" class="text-blue-600 hover:underline">Adatkezelési Nyilatkozatot</a>. <span class="text-red-500">*</span>
+          </label>
+        </div>
         <div id="errorBox" class="hidden text-sm text-red-600"></div>
         <div id="infoBox" class="hidden text-sm text-green-600"></div>
         <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Fiók Létrehozása</button>
@@ -75,12 +81,19 @@
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       const password2 = document.getElementById('password2').value;
+      const privacyPolicy = document.getElementById('privacyPolicy').checked;
       const errorBox = document.getElementById('errorBox');
       const infoBox = document.getElementById('infoBox');
       errorBox.classList.add('hidden'); errorBox.textContent = '';
       infoBox.classList.add('hidden'); infoBox.textContent = '';
       if (password !== password2) {
         errorBox.textContent = 'A jelszavak nem egyeznek';
+        errorBox.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Fiók Létrehozása';
+        return;
+      }
+      if (!privacyPolicy) {
+        errorBox.textContent = 'Kérjük, fogadd el az Adatkezelési Nyilatkozatot a folytatáshoz';
         errorBox.classList.remove('hidden');
         btn.disabled = false; btn.textContent = 'Fiók Létrehozása';
         return;
