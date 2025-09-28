@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile • Schedule Manager</title>
+  <title>Profil • Schedulix</title>
   <script>
     // Apply saved theme early to avoid flash
     (function(){
@@ -25,16 +25,16 @@
       <div class="flex justify-between h-16 items-center">
         <div class="flex items-center">
           <i data-feather="calendar" class="mr-2 text-blue-600"></i>
-          <span class="text-xl font-bold text-gray-800">Schedule Manager</span>
+          <span class="text-xl font-bold text-gray-800">Schedulix</span>
         </div>
         <div class="flex items-center space-x-3">
           <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium flex items-center">
             <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i>
-            Back to App
+            Vissza az alkalmazásba
           </a>
           <button onclick="logoutUser()" class="px-3 py-2 rounded-md text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 flex items-center">
             <i data-feather="log-out" class="w-4 h-4 mr-1"></i>
-            Logout
+            Kilépés
           </button>
         </div>
       </div>
@@ -43,21 +43,21 @@
 
   <main class="max-w-3xl mx-auto px-4 py-8">
     <div class="bg-white p-6 rounded-lg shadow border">
-      <h2 class="text-xl font-semibold mb-1">Your Profile</h2>
-      <p class="text-sm text-gray-500 mb-6">Update your profile information.</p>
+      <h2 class="text-xl font-semibold mb-1">A Te profilod</h2>
+      <p class="text-sm text-gray-500 mb-6">Frissítsd a profilodat.</p>
 
       <form id="profileForm" class="space-y-4 max-w-lg">
         <div>
-          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-          <input id="username" type="text" class="form-input" placeholder="e.g. johndoe_92" />
-          <p class="text-xs text-gray-500 mt-1">3–20 characters. Letters, numbers, and underscores only. Must be unique.</p>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Felhasználónév</label>
+          <input id="username" type="text" class="form-input" placeholder="például pelda_92" />
+          <p class="text-xs text-gray-500 mt-1">3–20 karakter. Csak betűk, számok és aláhúzás.</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
-          <input id="displayName" type="text" class="form-input" placeholder="How should we call you?" />
+          <label class="block text-sm font-medium text-gray-700 mb-1">Becenév</label>
+          <input id="displayName" type="text" class="form-input" placeholder="Hogyan szólítsunk?" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Profilkép</label>
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-full bg-gray-100 border overflow-hidden flex items-center justify-center">
               <img id="avatarPreview" src="" alt="Avatar preview" class="w-full h-full object-cover" onerror="this.style.display='none'" />
@@ -67,28 +67,28 @@
               <input id="avatarFile" type="file" accept="image/*" class="hidden" />
               <label for="avatarFile" class="inline-flex items-center px-3 py-2 bg-white text-gray-700 border rounded-md shadow-sm hover:bg-gray-50 cursor-pointer">
                 <i data-feather="upload-cloud" class="w-4 h-4 mr-2"></i>
-                <span>Upload new picture</span>
+                <span>Új kép feltöltése</span>
               </label>
               <p id="avatarFilename" class="text-xs text-gray-500 mt-1"></p>
             </div>
           </div>
           <input id="avatarUrl" type="hidden" />
-          <p class="text-xs text-gray-500 mt-1">Upload an image; it will be stored securely and its public link saved to your profile.</p>
+          <p class="text-xs text-gray-500 mt-1"></p>
         </div>
         <!-- Currency preference -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Pénznem</label>
           <select id="currencySelect" class="form-select w-48">
             <option value="Ft">Ft</option>
             <option value="€">€</option>
             <option value="$">$</option>
           </select>
-          <p class="text-xs text-gray-500 mt-1">Used for displaying pay rates and related amounts.</p>
+          <p class="text-xs text-gray-500 mt-1">A bérek és kapcsolódó összegek megjelenítéséhez használt.</p>
         </div>
         <div id="statusBox" class="hidden text-sm"></div>
         <div class="flex gap-3">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save Changes</button>
-          <a href="index.html" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">Cancel</a>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Változtatésok Mentése</button>
+          <a href="index.html" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">Mégse</a>
         </div>
       </form>
     </div>
@@ -152,12 +152,12 @@
           if (placeholder) placeholder.style.display = 'none';
           const nameEl = document.getElementById('avatarFilename');
           if (nameEl) nameEl.textContent = file.name;
-          statusBox.textContent = 'Image uploaded. Click "Save Changes" to update your profile.';
+          statusBox.textContent = 'Kép feltöltve. Kattints a "Változások Mentése" gombra a profilod frissítéséhez.';
           statusBox.classList.remove('hidden');
           statusBox.classList.remove('text-red-600');
           statusBox.classList.add('text-green-600');
         } catch (err) {
-          statusBox.textContent = err.message || 'Failed to upload image';
+          statusBox.textContent = err.message || 'Kép feltöltés sikertelen';
           statusBox.classList.remove('hidden');
           statusBox.classList.add('text-red-600');
         }
@@ -178,7 +178,7 @@
       // Validate username (3–20 chars, letters/numbers/underscores)
       const usernameOk = /^[a-zA-Z0-9_]{3,20}$/.test(username);
       if (!usernameOk) {
-        statusBox.textContent = 'Username must be 3–20 characters and can include letters, numbers, and underscores only.';
+        statusBox.textContent = 'A felhasználónévnek 3–20 karakter hosszúnak kell lennie és csak betűket, számokat és aláhúzás jeleket tartalmazhat.';
         statusBox.classList.remove('hidden');
         statusBox.classList.add('text-red-600');
         return;
@@ -198,11 +198,11 @@
 
       if (error) {
         const isUnique = error.code === '23505' || (error.message || '').toLowerCase().includes('duplicate');
-        statusBox.textContent = isUnique ? 'That username is already taken. Please choose another.' : (error.message || 'Failed to save');
+        statusBox.textContent = isUnique ? 'Ez a felhasználónév már foglalt. Kérjük válassz másikat.' : (error.message || 'Mentés sikertelen');
         statusBox.classList.remove('hidden');
         statusBox.classList.add('text-red-600');
       } else {
-        statusBox.textContent = 'Saved successfully';
+        statusBox.textContent = 'Sikeresen mentve';
         statusBox.classList.remove('hidden');
         statusBox.classList.remove('text-red-600');
         statusBox.classList.add('text-green-600');

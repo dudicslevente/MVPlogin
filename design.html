@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Schedule Manager</title>
+    <title>Alkalmazotti Műszakbeosztás Kezelő</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
@@ -50,18 +50,18 @@
             <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800 flex items-center">
                     <i data-feather="calendar" class="mr-2"></i>
-                    Schedule Manager
+                    Műszakbeosztás Kezelő
                 </h1>
                 <div class="flex space-x-4">
                     <button id="saveBtn"
                         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
                         <i data-feather="save" class="mr-2"></i>
-                        Save Schedule
+                        Műszakbeosztás Mentése
                     </button>
                     <button id="printBtn"
                         class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center">
                         <i data-feather="printer" class="mr-2"></i>
-                        Print
+                        Nyomtatás
                     </button>
                 </div>
             </div>
@@ -73,25 +73,25 @@
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center space-x-4">
                         <div>
-                            <label for="weekSelect" class="block text-sm font-medium text-gray-700 mb-1">Week</label>
+                            <label for="weekSelect" class="block text-sm font-medium text-gray-700 mb-1">Hét</label>
                             <select id="weekSelect"
                                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                <option>Current Week</option>
-                                <option>Next Week</option>
-                                <option>Week of June 1</option>
-                                <option>Week of June 8</option>
+                                <option>Jelenlegi Hét</option>
+                                <option>Következő Hét</option>
+                                <option>Június 1 Hete</option>
+                                <option>Június 8 Hete</option>
                             </select>
                         </div>
                         <div>
                             <label for="departmentSelect"
-                                class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                class="block text-sm font-medium text-gray-700 mb-1">Osztály</label>
                             <select id="departmentSelect"
                                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                <option>All Departments</option>
-                                <option>Sales</option>
-                                <option>Kitchen</option>
-                                <option>Service</option>
-                                <option>Management</option>
+                                <option>Minden Osztály</option>
+                                <option>Eloadás</option>
+                                <option>Konyha</option>
+                                <option>Szolgáltatás</option>
+                                <option>Menedzsment</option>
                             </select>
                         </div>
                     </div>
@@ -99,12 +99,12 @@
                         <button id="copyPrevWeek"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center">
                             <i data-feather="copy" class="mr-2"></i>
-                            Copy Previous Week
+                            Előző Hét Másolása
                         </button>
                         <button id="clearSchedule"
                             class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 flex items-center">
                             <i data-feather="trash-2" class="mr-2"></i>
-                            Clear Schedule
+                            Műszakbeosztás Törlése
                         </button>
                     </div>
                 </div>
@@ -114,7 +114,7 @@
                 <!-- Employee List -->
                 <div class="w-full lg:w-1/4 bg-white p-4 rounded-lg shadow">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-gray-800">Employees</h2>
+                        <h2 class="text-lg font-semibold text-gray-800">Alkalmazottak</h2>
                         <button id="addEmployee" class="p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200">
                             <i data-feather="plus"></i>
                         </button>
@@ -127,15 +127,15 @@
                 <!-- Schedule Grid -->
                 <div class="w-full lg:w-3/4 bg-white p-4 rounded-lg shadow overflow-x-auto">
                     <div class="mb-4 flex justify-between items-center">
-                        <h2 class="text-lg font-semibold text-gray-800">Schedule</h2>
+                        <h2 class="text-lg font-semibold text-gray-800">Műszakbeosztás</h2>
                         <div class="flex items-center space-x-2">
                             <button id="viewDay"
                                 class="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">
-                                Day View
+                                Nap Nézet
                             </button>
                             <button id="viewWeek"
                                 class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                Week View
+                                Hét Nézet
                             </button>
                         </div>
                     </div>
@@ -144,13 +144,13 @@
                         <!-- Time column -->
                         <div class="bg-gray-100 p-2 border-r border-b font-medium text-gray-700"></div>
                         <!-- Day headers -->
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Mon</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Tue</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Wed</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Thu</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Fri</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Sat</div>
-                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Sun</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Hétfő</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Kedd</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Szerda</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Csütörtök</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Péntek</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Szombat</div>
+                        <div class="bg-gray-100 p-2 border-b font-medium text-gray-700 text-center">Vasárnap</div>
 
                         <!-- Time slots -->
                         <div class="bg-gray-50 p-2 border-r border-b font-medium text-gray-700">8:00 AM</div>
@@ -180,14 +180,14 @@
             <div id="shiftModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
                 <div class="bg-white rounded-lg p-6 w-full max-w-md">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Shift Details</h3>
+                        <h3 class="text-lg font-semibold">Műszak Részletek</h3>
                         <button id="closeModal" class="text-gray-500 hover:text-gray-700">
                             <i data-feather="x"></i>
                         </button>
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alkalmazott</label>
                             <select class="w-full border-gray-300 rounded-md">
                                 <option>John Doe</option>
                                 <option>Jane Smith</option>
@@ -196,30 +196,30 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kezdés Ideje</label>
                                 <input type="time" class="w-full border-gray-300 rounded-md" value="09:00">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Befejezés Ideje</label>
                                 <input type="time" class="w-full border-gray-300 rounded-md" value="17:00">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Pozició</label>
                             <input type="text" class="w-full border-gray-300 rounded-md" value="Server">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Megjegyzések</label>
                             <textarea class="w-full border-gray-300 rounded-md" rows="3"></textarea>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
                         <button id="cancelShift"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
-                            Cancel
+                            Mégse
                         </button>
                         <button id="saveShift" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Save Shift
+                            Műszak Mentése
                         </button>
                     </div>
                 </div>
@@ -237,11 +237,11 @@
 
             // Sample employee data
             const employees = [
-                { id: 1, name: 'John Doe', position: 'Server', color: 'bg-blue-100 text-blue-800' },
-                { id: 2, name: 'Jane Smith', position: 'Chef', color: 'bg-green-100 text-green-800' },
-                { id: 3, name: 'Mike Johnson', position: 'Bartender', color: 'bg-purple-100 text-purple-800' },
-                { id: 4, name: 'Sarah Williams', position: 'Host', color: 'bg-yellow-100 text-yellow-800' },
-                { id: 5, name: 'David Brown', position: 'Manager', color: 'bg-red-100 text-red-800' }
+                { id: 1, name: 'John Doe', position: 'Pincér', color: 'bg-blue-100 text-blue-800' },
+                { id: 2, name: 'Jane Smith', position: 'Szakacs', color: 'bg-green-100 text-green-800' },
+                { id: 3, name: 'Mike Johnson', position: 'Italkeverő', color: 'bg-purple-100 text-purple-800' },
+                { id: 4, name: 'Sarah Williams', position: 'Házigazda', color: 'bg-yellow-100 text-yellow-800' },
+                { id: 5, name: 'David Brown', position: 'Kezelő', color: 'bg-red-100 text-red-800' }
             ];
 
             // Populate employee list
@@ -340,12 +340,12 @@
 
             // Save button
             document.getElementById('saveBtn').addEventListener('click', function () {
-                alert('Schedule saved successfully!');
+                alert('Műszakbeosztás sikeresen mentve!');
             });
 
             // Clear schedule button
             document.getElementById('clearSchedule').addEventListener('click', function () {
-                if (confirm('Are you sure you want to clear the entire schedule?')) {
+                if (confirm('Biztos vagy benne, hogy törölni akarod a teljes műszakbeosztást?')) {
                     document.querySelectorAll('.shift-card').forEach(card => card.remove());
                 }
             });
@@ -353,7 +353,7 @@
             // Add employee button
             document.getElementById('addEmployee').addEventListener('click', function () {
                 // In a real app, this would open a form to add a new employee
-                alert('Add employee functionality would go here');
+                alert('Alkalmazott hozzáadása funkció itt lenne');
             });
         });
     </script>

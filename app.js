@@ -83,14 +83,14 @@ class ScheduleManager {
         this.isDarkMode = !this.isDarkMode;
         localStorage.setItem('scheduleManager_theme', this.isDarkMode ? 'dark' : 'light');
         this.applyTheme();
-        this.showNotification(`Switched to ${this.isDarkMode ? 'dark' : 'light'} mode`, 'info');
+        //this.showNotification(`Váltottam ${this.isDarkMode ? 'sötét' : 'világos'} módra`, 'info');
     }
 
     // Helper to get display name (nickname first)
     getEmployeeDisplayName(employee) {
         if (!employee) return 'Employee';
         const fullName = (employee.name && employee.name.trim()) || [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim();
-        return (employee.nickname && employee.nickname.trim()) ? employee.nickname.trim() : (fullName || 'Employee');
+        return (employee.nickname && employee.nickname.trim()) ? employee.nickname.trim() : (fullName || 'Alkalmazott');
     }
 
     saveData() {
@@ -115,14 +115,14 @@ class ScheduleManager {
                 email: 'john.doe@example.com',
                 phone: '555-0101',
                 department: 'service',
-                position: 'Server',
+                position: 'Pincér',
                 minHours: 20,
                 maxHours: 40,
                 basePay: 15.50,
                 overtimePremium: 50,
                 vacationDaysPerYear: 14,
                 sickDaysPerYear: 5,
-                workTypes: ['Server', 'Host'],
+                workTypes: ['Pincér', 'Házigazda'],
                 customFields: '',
                 isActive: true,
                 color: 'color-1',
@@ -136,15 +136,15 @@ class ScheduleManager {
                 email: 'jane.smith@example.com',
                 phone: '555-0102',
                 department: 'kitchen',
-                position: 'Chef',
+                position: 'Szakacs',
                 minHours: 30,
                 maxHours: 45,
                 basePay: 22.00,
                 overtimePremium: 50,
                 vacationDaysPerYear: 21,
                 sickDaysPerYear: 7,
-                workTypes: ['Chef', 'Kitchen Prep'],
-                customFields: 'Head Chef - 5 years experience',
+                workTypes: ['Szakacs', 'Konyhai Előkészítő'],
+                customFields: 'Főszakacs - 5 év tapasztalat',
                 isActive: true,
                 color: 'color-2',
                 customColor: '#10b981',
@@ -157,14 +157,14 @@ class ScheduleManager {
                 email: 'mike.johnson@example.com',
                 phone: '555-0103',
                 department: 'service',
-                position: 'Bartender',
+                position: 'Italkeverő',
                 minHours: 25,
                 maxHours: 40,
                 basePay: 18.00,
                 overtimePremium: 50,
                 vacationDaysPerYear: 14,
                 sickDaysPerYear: 5,
-                workTypes: ['Bartender', 'Server'],
+                workTypes: ['Italkeverő', 'Pincér'],
                 customFields: '',
                 isActive: true,
                 color: 'color-3',
@@ -178,15 +178,15 @@ class ScheduleManager {
                 email: 'sarah.williams@example.com',
                 phone: '555-0104',
                 department: 'service',
-                position: 'Host',
+                position: 'Házigazda',
                 minHours: 15,
                 maxHours: 30,
                 basePay: 14.00,
                 overtimePremium: 50,
                 vacationDaysPerYear: 10,
                 sickDaysPerYear: 3,
-                workTypes: ['Host', 'Cashier'],
-                customFields: 'Part-time student',
+                workTypes: ['Házigazda', 'Pénztáros'],
+                customFields: 'Részidős diák',
                 isActive: true,
                 color: 'color-4',
                 customColor: '#f59e0b',
@@ -199,15 +199,15 @@ class ScheduleManager {
                 email: 'david.brown@example.com',
                 phone: '555-0105',
                 department: 'management',
-                position: 'Manager',
+                position: 'Kezelő',
                 minHours: 40,
                 maxHours: 50,
                 basePay: 25.00,
                 overtimePremium: 50,
                 vacationDaysPerYear: 21,
                 sickDaysPerYear: 10,
-                workTypes: ['Manager', 'Supervisor'],
-                customFields: 'Assistant Manager',
+                workTypes: ['Kezelő', 'Felügyelő'],
+                customFields: 'Helyettes Kezelő',
                 isActive: true,
                 color: 'color-5',
                 customColor: '#ef4444',
@@ -394,21 +394,21 @@ avigation
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekStart.getDate() + 6);
             
-            labelElement.textContent = 'Week View';
+            labelElement.textContent = 'Heti Nézet';
             datesElement.textContent = `${this.formatDateDisplay(weekStart)} - ${this.formatDateDisplay(weekEnd)}`;
-            clearButtonText.textContent = 'Clear Week';
+            clearButtonText.textContent = 'Hét Törlése';
         } else {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthNames = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+                              'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
             
-            labelElement.textContent = 'Month View';
+            labelElement.textContent = 'Havi Nézet';
             datesElement.textContent = `${monthNames[this.currentMonth.month]} ${this.currentMonth.year}`;
-            clearButtonText.textContent = 'Clear Month';
+            clearButtonText.textContent = 'Hónap Törlése';
         }
     }
 
     formatDateDisplay(date) {
-        return date.toLocaleDateString('en-US', { 
+        return date.toLocaleDateString('hu-HU', { 
             month: 'short', 
             day: 'numeric'
         });
@@ -491,7 +491,7 @@ avigation
         if (!container) return;
         
         const weekDates = this.getWeekDates(this.currentWeek);
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'];
         
         container.innerHTML = '';
         container.className = 'day-schedule';
@@ -604,7 +604,7 @@ avigation
             e.stopPropagation();
             if (e.target.closest('button')) {
                 this.removeShift(shift.id);
-                this.showNotification('Shift deleted successfully', 'success');
+                this.showNotification('Műszak sikeresen törölve', 'success');
             } else {
                 this.editShift(shift);
             }
@@ -681,7 +681,7 @@ avigation
         container.innerHTML = '';
         
         // Add day headers
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const dayNames = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtő', 'Péntek', 'Szombat', 'Vasárnap'];
         dayNames.forEach(dayName => {
             const dayHeader = document.createElement('div');
             dayHeader.className = 'month-header';
@@ -887,7 +887,7 @@ avigation
                         };
                         
                         this.addShiftToAllViews(shift);
-                        this.showNotification(`Added ${this.getEmployeeDisplayName(employee)} to ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
+                        this.showNotification(`Hozzáadva: ${this.getEmployeeDisplayName(employee)} - ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
                     }
                 }
                 
@@ -945,7 +945,7 @@ avigation
                         this.addShiftToAllViews(shift);
                         evt.item.remove();
                         this.renderSchedule();
-                        this.showNotification(`Added ${this.getEmployeeDisplayName(employee)} to ${this.formatDateDisplay(new Date(slotDate + 'T00:00:00'))}`, 'success');
+                        this.showNotification(`Hozzáadva: ${this.getEmployeeDisplayName(employee)} - ${this.formatDateDisplay(new Date(slotDate + 'T00:00:00'))}`, 'success');
                     }
                 }
             });
@@ -1046,7 +1046,7 @@ avigation
         
         const employee = this.employees.find(emp => String(emp.id) === String(foundShift.employeeId));
         const employeeName = this.getEmployeeDisplayName(employee);
-        this.showNotification(`Moved ${employeeName} to ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
+        this.showNotification(`${employeeName} sikeresen áthelyezve: ${this.formatDateDisplay(new Date(targetDate + 'T00:00:00'))}`, 'success');
     }
 
     removeShift(shiftId) {
@@ -1140,7 +1140,7 @@ avigation
         const date = document.getElementById('shiftModal').dataset.date;
         
         if (!employeeId || !startTime || !endTime || !position) {
-            this.showNotification('Please fill in all required fields', 'error');
+            this.showNotification('Kérjük, tölts ki minden kötelező mezőt', 'error');
             return;
         }
         
@@ -1172,13 +1172,13 @@ avigation
         const employeeName = this.getEmployeeDisplayName(employee) || 'Unknown Employee';
         
         this.showConfirmation(
-            'Delete Shift',
-            `Are you sure you want to delete the shift for ${employeeName}?`,
+            'Műszak Törlése',
+            `Biztos vagy benne, hogy törölni akarod ${employeeName} műszakját?`,
             () => {
                 this.removeShift(this.editingShift.id);
                 this.closeShiftModal();
                 this.renderSchedule();
-                this.showNotification('Shift deleted successfully', 'success');
+                this.showNotification('Műszak sikeresen törölve', 'success');
             }
         );
     }
@@ -1218,10 +1218,10 @@ avigation
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
-                        <button onclick="scheduleManager.editEmployee('${employee.id}')" class="action-btn edit" title="Edit Employee">
+                        <button onclick="scheduleManager.editEmployee('${employee.id}')" class="action-btn edit" title="Alkalmazott Szerkesztése">
                             <i data-feather="edit-2" class="w-4 h-4"></i>
                         </button>
-                        <button onclick="scheduleManager.deleteEmployee('${employee.id}')" class="action-btn delete" title="Delete Employee">
+                        <button onclick="scheduleManager.deleteEmployee('${employee.id}')" class="action-btn delete" title="Alkalmazott Törlése">
                             <i data-feather="trash-2" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -1308,7 +1308,7 @@ avigation
         };
         
         if (!employee.name || !employee.department || !employee.position) {
-            this.showNotification('Please fill in all required fields', 'error');
+            this.showNotification('Kérjük, tölts ki minden kötelező mezőt', 'error');
             return;
         }
         
@@ -1325,7 +1325,7 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
-        this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
+        this.showNotification(`Alkalmazott: ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'frissítve' : 'hozzáadva'} sikeresen!`, 'success');
     }
 
     editEmployee(id) {
@@ -1340,8 +1340,8 @@ avigation
         if (!employee) return;
         
         this.showConfirmation(
-            'Delete Employee',
-            `Are you sure you want to delete ${this.getEmployeeDisplayName(employee)}? This will also remove all their scheduled shifts.`, 
+            'Alkalmazott Törlése',
+            `Biztos vagy benne, hogy törölni akarod ${this.getEmployeeDisplayName(employee)} alkalmazottat? Ez eltávolítja az összes beosztott műszakját is.`, 
             () => {
                 this.employees = this.employees.filter(emp => emp.id !== id);
                 
@@ -1358,7 +1358,7 @@ avigation
                 this.renderEmployeeTable();
                 this.renderEmployeeList();
                 this.renderSchedule();
-                this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} deleted successfully`, 'success');
+                this.showNotification(`Alkalmazott: ${this.getEmployeeDisplayName(employee)} sikeresen törölve`, 'success');
             }
         );
     }
@@ -1415,21 +1415,21 @@ avigation
             this.copiedWeek = JSON.parse(JSON.stringify(this.schedules[weekKey]));
             document.getElementById('pasteBtn').disabled = false;
             document.getElementById('pasteBtn').classList.remove('opacity-50');
-            this.showNotification('Week copied successfully!', 'success');
+            this.showNotification('Hét sikeresen másolva!', 'success');
         } else {
-            this.showNotification('No schedule to copy for this week.', 'warning');
+            this.showNotification('Nincs másolható műszakbeosztás erre a hétre.', 'warning');
         }
     }
 
     pasteWeek() {
         if (!this.copiedWeek) {
-            this.showNotification('No week copied to paste.', 'warning');
+            this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
             return;
         }
         
         this.showConfirmation(
-            'Paste Week Schedule',
-            'This will replace the current week\'s schedule with the copied week. Continue?',
+            'Heti Műszakbeosztás Beillesztése',
+            'Ez lecseréli a jelenlegi hét műszakbeosztását a másolt héttel. Biztosan folytatod?',
             () => {
                 const weekKey = this.currentWeek;
                 const weekDates = this.getWeekDates(this.currentWeek);
@@ -1451,9 +1451,9 @@ avigation
                 
                 this.saveData();
                 this.renderSchedule();
-                this.showNotification('Week pasted successfully!', 'success');
+                this.showNotification('Hét sikeresen beillesztve!', 'success');
             },
-            'Paste',
+            'Beillesztés',
             'bg-blue-600 hover:bg-blue-700'
         );
     }
@@ -1468,22 +1468,22 @@ avigation
 
     clearWeek() {
         this.showConfirmation(
-            'Clear Week Schedule',
-            'Are you sure you want to clear the entire schedule for this week? This action cannot be undone.',
+            'Heti Műszakbeosztás Törlése',
+            'Biztos vagy benne, hogy törölni szeretnéd az egész heti műszakbeosztást? Ez a művelet nem vonható vissza.',
             () => {
                 const weekKey = this.currentWeek;
                 this.schedules[weekKey] = {};
                 this.saveData();
                 this.renderSchedule();
-                this.showNotification('Week schedule cleared successfully!', 'success');
+                this.showNotification('Heti műszakbeosztás sikeresen törölve!', 'success');
             }
         );
     }
 
     clearMonth() {
         this.showConfirmation(
-            'Clear Month Schedule',
-            'Are you sure you want to clear the entire schedule for this month? This action cannot be undone.',
+            'Havi Műszakbeosztás Törlése',
+            'Biztos vagy benne, hogy törölni szeretnéd az egész havi műszakbeosztást? Ez a művelet nem vonható vissza.',
             () => {
                 const year = this.currentMonth.year;
                 const month = this.currentMonth.month;
@@ -1502,7 +1502,7 @@ avigation
                 
                 this.saveData();
                 this.renderSchedule();
-                this.showNotification('Month schedule cleared successfully!', 'success');
+                this.showNotification('Havi műszakbeosztás sikeresen törölve!', 'success');
             }
         );
     }
@@ -1521,7 +1521,7 @@ avigation
         const file = fileInput.files[0];
         
         if (!file) {
-            this.showNotification('Please select a file to import.', 'warning');
+            this.showNotification('Kérjük, válassz egy fájlt az importáláshoz.', 'warning');
             return;
         }
         
@@ -1536,15 +1536,15 @@ avigation
                     data = this.parseCSV(e.target.result);
                     this.importCSV(data);
                 } else {
-                    alert('Unsupported file format. Please use JSON or CSV.');
+                    alert('Nem támogatott fájlformátum. Kérjük, használj JSON vagy CSV fájlt.');
                     return;
                 }
                 
                 this.closeImportModal();
                 this.renderSchedule();
-                this.showNotification('Schedule imported successfully!', 'success');
+                this.showNotification('Műszakbeosztás sikeresen importálva!', 'success');
             } catch (error) {
-                this.showNotification('Error importing file: ' + error.message, 'error');
+                this.showNotification('Hiba a fájl importálásakor: ' + error.message, 'error');
             }
         };
         
@@ -1691,7 +1691,7 @@ avigation
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `schedule-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `schedulix-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1724,8 +1724,8 @@ avigation
         const employeeStats = {};
         const departmentStats = {};
         const weeklyStats = {
-            Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0,
-            Friday: 0, Saturday: 0, Sunday: 0
+            Hétfó: 0, Kedd: 0, Szerda: 0, Csütörtök: 0,
+            Péntek: 0, Szombat: 0, Vasárnap: 0
         };
         
         // Initialize employee stats
@@ -1770,7 +1770,7 @@ avigation
         
         // Calculate from current week
         const weekDates = this.getWeekDates(this.currentWeek);
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const dayNames = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'];
         
         Object.keys(weekSchedule).forEach(dateStr => {
             const dayIndex = weekDates.indexOf(dateStr);
@@ -1981,23 +1981,29 @@ avigation
     // Utility Functions
     saveSchedule() {
         this.saveData();
-        this.showNotification('Schedule saved successfully!', 'success');
+        this.showNotification('Műszakbeosztás sikeresen mentve!', 'success');
     }
 
     printSchedule() {
         // Create a print-friendly version of the schedule
         const printWindow = window.open('', '_blank');
+        printWindow.opener = null; // Security fix for about:blank
         const scheduleContent = this.generatePrintableSchedule();
         
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Schedule - ${this.formatDateDisplay(new Date(this.currentWeek + 'T00:00:00'))}</title>
+                <title>Beosztás - ${this.formatDateDisplay(new Date(this.currentWeek + 'T00:00:00'))}</title>
                 <style>
                     @page {
                         size: A4 landscape;
                         margin: 10mm;
+                        @bottom-left {
+                            content: "Schedulix";
+                            font-size: 8pt;
+                            color: #666;
+                        }
                     }
                     html, body { height: 100%; }
                     body {
@@ -2076,14 +2082,14 @@ avigation
             </head>
             <body>
                 <div class="print-header">
-                    <h1>Employee Schedule</h1>
-                    <h2>${this.currentView === 'week' ? 'Week of' : 'Month of'} ${this.getCurrentPeriodLabel()}</h2>
+                    <h1>Műszakbeosztás</h1>
+                    <h2>${this.currentView === 'week' ? '' : ''} ${this.getCurrentPeriodLabel()}</h2> 
                 </div>
                 ${scheduleContent}
             </body>
             </html>
         `);
-        
+        //<h2>${this.currentView === 'week' ? 'Hét:' : 'Hónap:'} ${this.getCurrentPeriodLabel()}</h2> 
         printWindow.document.close();
         printWindow.focus();
         
@@ -2104,7 +2110,7 @@ avigation
 
     generatePrintableWeekSchedule() {
         const weekDates = this.getWeekDates(this.currentWeek);
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'];
         
         let html = '<div class="print-schedule">';
         
@@ -2155,7 +2161,7 @@ avigation
         let html = '<div class="print-schedule">';
         
         // Add day headers
-        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const dayNames = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'];
         dayNames.forEach(dayName => {
             html += `<div class="print-day-header" style="grid-column: span 1; text-align: center; font-weight: bold; padding: 10px; border: 1px solid #000;">${dayName}</div>`;
         });
@@ -2199,8 +2205,8 @@ avigation
             weekEnd.setDate(weekStart.getDate() + 6);
             return `${this.formatDateDisplay(weekStart)} - ${this.formatDateDisplay(weekEnd)}`;
         } else {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
+            const monthNames = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+                              'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
             return `${monthNames[this.currentMonth.month]} ${this.currentMonth.year}`;
         }
     }
@@ -2229,10 +2235,10 @@ avigation
         };
 
         const titleMap = {
-            success: title || 'Success',
-            error: title || 'Error',
-            warning: title || 'Warning',
-            info: title || 'Information'
+            success: title || 'Sikeres',
+            error: title || 'Hiba',
+            warning: title || 'Figyelmeztetés',
+            info: title || 'Információ'
         };
 
         notification.innerHTML = `
@@ -2283,7 +2289,7 @@ avigation
     }
 
     // Confirmation System
-    showConfirmation(title, message, callback, confirmText = 'Confirm', confirmClass = 'bg-red-600 hover:bg-red-700') {
+    showConfirmation(title, message, callback, confirmText = 'Megerősítés', confirmClass = 'bg-red-600 hover:bg-red-700') {
         const modal = document.getElementById('confirmationModal');
         const titleElement = document.getElementById('confirmationTitle');
         const messageElement = document.getElementById('confirmationMessage');
@@ -2347,7 +2353,7 @@ avigation
             deptItem.innerHTML = `
                 <div class="department-name">${dept.charAt(0).toUpperCase() + dept.slice(1)}</div>
                 <div class="department-actions">
-                    <button onclick="scheduleManager.deleteDepartment('${dept}')" class="action-btn delete" title="Delete Department">
+                    <button onclick="scheduleManager.deleteDepartment('${dept}')" class="action-btn delete" title="Részleg Törlése">
                         <i data-feather="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -2371,7 +2377,7 @@ avigation
         }
         
         if (this.departments.includes(name)) {
-            this.showNotification('Department already exists', 'warning');
+            this.showNotification('A részleg már létezik', 'warning');
             return;
         }
         
@@ -2380,7 +2386,7 @@ avigation
         this.renderDepartmentList();
         this.updateDepartmentDropdowns();
         input.value = '';
-        this.showNotification(`Department "${name}" added successfully`, 'success');
+        this.showNotification(`"${name}" részleg sikeresen hozzáadva`, 'success');
     }
 
     deleteDepartment(deptName) {
@@ -2393,14 +2399,14 @@ avigation
         }
         
         this.showConfirmation(
-            'Delete Department',
-            `Are you sure you want to delete the "${deptName}" department?`,
+            'Részleg Törlése',
+            `Biztos vagy benne, hogy törölni akarod a(z) "${deptName}" részleget?`,
             () => {
                 this.departments = this.departments.filter(dept => dept !== deptName);
                 this.saveData();
                 this.renderDepartmentList();
                 this.updateDepartmentDropdowns();
-                this.showNotification(`Department "${deptName}" deleted successfully`, 'success');
+                this.showNotification(`"${deptName}" részleg sikeresen törölve`, 'success');
             }
         );
     }
@@ -2415,7 +2421,7 @@ avigation
             const currentValue = dropdown.value;
             const isFilter = dropdownId === 'departmentFilter';
             
-            dropdown.innerHTML = isFilter ? '<option value="">All Departments</option>' : '<option value="">Select Department</option>';
+            dropdown.innerHTML = isFilter ? '<option value="">Összes részleg</option>' : '<option value="">Select Department</option>';
             
             this.departments.forEach(dept => {
                 const option = document.createElement('option');
@@ -2553,7 +2559,7 @@ avigation
         };
         
         if (!employee.name || !employee.department || !employee.position) {
-            this.showNotification('Please fill in all required fields', 'error');
+            this.showNotification('Kérjük, tölts ki minden kötelező mezőt', 'error');
             return;
         }
         
@@ -2570,7 +2576,7 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
-        this.showNotification(`Employee ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'updated' : 'added'} successfully!`, 'success');
+        this.showNotification(`Alkalmazott: ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'frissítve' : 'hozzáadva'} sikeresen!`, 'success');
     }
 
     closeEmployeeModal() {
