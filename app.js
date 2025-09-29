@@ -484,6 +484,11 @@ avigation
         } else {
             this.renderMonthView();
         }
+        
+        // Initialize feather icons after rendering schedule
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
     }
 
     renderWeekView() {
@@ -1091,7 +1096,7 @@ avigation
         
         // Populate employee dropdown
         const employeeSelect = document.getElementById('shiftEmployee');
-        employeeSelect.innerHTML = '<option value="">Select Employee</option>';
+        employeeSelect.innerHTML = '<option value="">Válassz alkalmazottat</option>';
         this.employees.filter(emp => emp.isActive).forEach(employee => {
             const option = document.createElement('option');
             option.value = employee.id;
@@ -1213,7 +1218,7 @@ avigation
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.vacationDaysPerYear}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                        ${employee.isActive ? 'Active' : 'Inactive'}
+                        ${employee.isActive ? 'Aktív' : 'Inaktív'}
                     </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1263,7 +1268,7 @@ avigation
         } else {
             // Add mode
             this.editingEmployee = null;
-            document.getElementById('modalTitle').textContent = 'Add Employee';
+            document.getElementById('modalTitle').textContent = 'Alklalmazott Hozzáadása';
             form.reset();
             document.getElementById('isActive').checked = true;
         }
@@ -2372,7 +2377,7 @@ avigation
         const name = input.value.trim().toLowerCase();
         
         if (!name) {
-            this.showNotification('Please enter a department name', 'warning');
+            this.showNotification('Adj meg egy nevet a részlegnek', 'warning');
             return;
         }
         
@@ -2490,7 +2495,7 @@ avigation
         } else {
             // Add mode
             this.editingEmployee = null;
-            document.getElementById('modalTitle').textContent = 'Add Employee';
+            document.getElementById('modalTitle').textContent = 'Alkalmazott létrehozása';
             form.reset();
             document.getElementById('isActive').checked = true;
             // Default work time for add mode

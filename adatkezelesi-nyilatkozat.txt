@@ -36,6 +36,8 @@ Dolgozók (munkabeosztásban szereplő személyek) adatai:
 
 Név
 
+Becenév 
+
 Műszak
 
 Részleg
@@ -49,6 +51,18 @@ Telefonszám
 Órabér
 
 Profilkép (opcionális)
+
+Minimum Óra/Hét
+
+Maximum Óra/Hét
+
+Túlóra pótdíj
+
+Szabadságok/Év
+
+Minden más, melyet a megjegyzés rovatba ír a munkáltató
+
+Betegszabadságok/Év
 
 3. Az adatkezelés célja
 
