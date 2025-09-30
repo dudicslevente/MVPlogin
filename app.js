@@ -388,22 +388,55 @@ avigation
         const labelElement = document.getElementById('currentPeriodLabel');
         const datesElement = document.getElementById('currentPeriodDates');
         const clearButtonText = document.getElementById('clearButtonText');
+        const copyBtn = document.querySelector("button[onclick='copyWeek()']" );
+        const pasteBtn = document.querySelector("button[onclick='pasteWeek()']" );
+        
+        // Detect if we're on the English page
+        const isEnglish = document.documentElement.lang === 'en' || document.title.includes('Employee Schedule');
         
         if (this.currentView === 'week') {
             const weekStart = new Date(this.currentWeek + 'T00:00:00');
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekStart.getDate() + 6);
             
-            labelElement.textContent = 'Heti Nézet';
+            labelElement.textContent = isEnglish ? 'Week View' : 'Heti Nézet';
             datesElement.textContent = `${this.formatDateDisplay(weekStart)} - ${this.formatDateDisplay(weekEnd)}`;
-            clearButtonText.textContent = 'Hét Törlése';
-        } else {
-            const monthNames = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június',
-                              'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+            clearButtonText.textContent = isEnglish ? 'Clear Week' : 'Hét Törlése';
             
-            labelElement.textContent = 'Havi Nézet';
+            // Update copy/paste button text for week view
+            if (copyBtn) {
+                const copyText = isEnglish ? 'Copy Week' : 'Hét Másolása';
+                copyBtn.innerHTML = `<i data-feather="copy" class="mr-2"></i>${copyText}`;
+            }
+            if (pasteBtn) {
+                const pasteText = isEnglish ? 'Paste Week' : 'Hét Beillesztése';
+                pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+            }
+        } else {
+            const monthNames = isEnglish ? 
+                ['January', 'February', 'March', 'April', 'May', 'June',
+                 'July', 'August', 'September', 'October', 'November', 'December'] :
+                ['Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+                 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+            
+            labelElement.textContent = isEnglish ? 'Month View' : 'Havi Nézet';
             datesElement.textContent = `${monthNames[this.currentMonth.month]} ${this.currentMonth.year}`;
-            clearButtonText.textContent = 'Hónap Törlése';
+            clearButtonText.textContent = isEnglish ? 'Clear Month' : 'Hónap Törlése';
+            
+            // Update copy/paste button text for month view
+            if (copyBtn) {
+                const copyText = isEnglish ? 'Copy Month' : 'Hónap Másolása';
+                copyBtn.innerHTML = `<i data-feather="copy" class="mr-2"></i>${copyText}`;
+            }
+            if (pasteBtn) {
+                const pasteText = isEnglish ? 'Paste Month' : 'Hónap Beillesztése';
+                pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+            }
+        }
+        
+        // Update feather icons after changing button content
+        if (typeof feather !== 'undefined') {
+            feather.replace();
         }
     }
 
