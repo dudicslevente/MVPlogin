@@ -9,6 +9,7 @@ class ScheduleManager {
         this.currentView = 'week';
         this.currentPage = 'schedule';
         this.copiedWeek = null;
+        this.copiedMonth = null;
         this.editingEmployee = null;
         this.editingShift = null;
         this.notificationId = 0;
@@ -411,6 +412,15 @@ avigation
             if (pasteBtn) {
                 const pasteText = isEnglish ? 'Paste Week' : 'Hét Beillesztése';
                 pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+                
+                // Enable/disable paste button based on copied week data
+                if (this.copiedWeek) {
+                    pasteBtn.disabled = false;
+                    pasteBtn.classList.remove('opacity-50');
+                } else {
+                    pasteBtn.disabled = true;
+                    pasteBtn.classList.add('opacity-50');
+                }
             }
         } else {
             const monthNames = isEnglish ? 
@@ -431,6 +441,15 @@ avigation
             if (pasteBtn) {
                 const pasteText = isEnglish ? 'Paste Month' : 'Hónap Beillesztése';
                 pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+                
+                // Enable/disable paste button based on copied month data
+                if (this.copiedMonth) {
+                    pasteBtn.disabled = false;
+                    pasteBtn.classList.remove('opacity-50');
+                } else {
+                    pasteBtn.disabled = true;
+                    pasteBtn.classList.add('opacity-50');
+                }
             }
         }
         
@@ -1448,6 +1467,22 @@ avigation
 
     // Copy/Paste Functionality
     copyWeek() {
+        if (this.currentView === 'week') {
+            this.copyCurrentWeek();
+        } else {
+            this.copyCurrentMonth();
+        }
+    }
+
+    pasteWeek() {
+        if (this.currentView === 'week') {
+            this.pasteCurrentWeek();
+        } else {
+            this.pasteCurrentMonth();
+        }
+    }
+
+    copyCurrentWeek() {
         const weekKey = this.currentWeek;
         if (this.schedules[weekKey] && Object.keys(this.schedules[weekKey]).length > 0) {
             this.copiedWeek = JSON.parse(JSON.stringify(this.schedules[weekKey]));
@@ -1459,7 +1494,45 @@ avigation
         }
     }
 
-    pasteWeek() {
+    copyCurrentMonth() {
+        const year = this.currentMonth.year;
+        const month = this.currentMonth.month;
+        
+        // Collect all shifts that belong to the current month (excluding previous/next month days)
+        const monthSchedules = {};
+        let hasSchedules = false;
+        
+        Object.keys(this.schedules).forEach(weekKey => {
+            if (this.schedules[weekKey]) {
+                Object.keys(this.schedules[weekKey]).forEach(dateStr => {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    // Only include dates that belong to the current month
+                    if (date.getFullYear() === year && date.getMonth() === month) {
+                        if (!monthSchedules[dateStr]) {
+                            monthSchedules[dateStr] = [];
+                        }
+                        monthSchedules[dateStr] = [...this.schedules[weekKey][dateStr]];
+                        hasSchedules = true;
+                    }
+                });
+            }
+        });
+        
+        if (hasSchedules) {
+            this.copiedMonth = {
+                year: year,
+                month: month,
+                schedules: JSON.parse(JSON.stringify(monthSchedules))
+            };
+            document.getElementById('pasteBtn').disabled = false;
+            document.getElementById('pasteBtn').classList.remove('opacity-50');
+            this.showNotification('Hónap sikeresen másolva!', 'success');
+        } else {
+            this.showNotification('Nincs másolható műszakbeosztás erre a hónapra.', 'warning');
+        }
+    }
+
+    pasteCurrentWeek() {
         if (!this.copiedWeek) {
             this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
             return;
@@ -1490,6 +1563,75 @@ avigation
                 this.saveData();
                 this.renderSchedule();
                 this.showNotification('Hét sikeresen beillesztve!', 'success');
+            },
+            'Beillesztés',
+            'bg-blue-600 hover:bg-blue-700'
+        );
+    }
+
+    pasteCurrentMonth() {
+        if (!this.copiedMonth) {
+            this.showNotification('Nincs másolt hónap a beillesztéshez.', 'warning');
+            return;
+        }
+        
+        this.showConfirmation(
+            'Havi Műszakbeosztás Beillesztése',
+            'Ez lecseréli a jelenlegi hónap műszakbeosztását a másolt hónappal. Biztosan folytatod?',
+            () => {
+                const targetYear = this.currentMonth.year;
+                const targetMonth = this.currentMonth.month;
+                
+                // Clear current month schedules first
+                Object.keys(this.schedules).forEach(weekKey => {
+                    if (this.schedules[weekKey]) {
+                        Object.keys(this.schedules[weekKey]).forEach(dateStr => {
+                            const date = new Date(dateStr + 'T00:00:00');
+                            if (date.getFullYear() === targetYear && date.getMonth() === targetMonth) {
+                                delete this.schedules[weekKey][dateStr];
+                            }
+                        });
+                    }
+                });
+                
+                // Calculate the offset between copied month and target month
+                const copiedDate = new Date(this.copiedMonth.year, this.copiedMonth.month, 1);
+                const targetDate = new Date(targetYear, targetMonth, 1);
+                
+                // Paste copied shifts with adjusted dates
+                Object.keys(this.copiedMonth.schedules).forEach(originalDateStr => {
+                    const originalDate = new Date(originalDateStr + 'T00:00:00');
+                    const dayOfMonth = originalDate.getDate();
+                    
+                    // Create corresponding date in target month
+                    const newDate = new Date(targetYear, targetMonth, dayOfMonth);
+                    
+                    // Only paste if the new date is valid and in the target month
+                    if (newDate.getMonth() === targetMonth) {
+                        const newDateStr = this.formatDate(newDate);
+                        const weekKey = this.getWeekKey(newDate);
+                        
+                        if (!this.schedules[weekKey]) {
+                            this.schedules[weekKey] = {};
+                        }
+                        if (!this.schedules[weekKey][newDateStr]) {
+                            this.schedules[weekKey][newDateStr] = [];
+                        }
+                        
+                        // Copy shifts with new IDs and dates
+                        const newShifts = this.copiedMonth.schedules[originalDateStr].map(shift => ({
+                            ...shift,
+                            id: this.generateId(),
+                            date: newDateStr
+                        }));
+                        
+                        this.schedules[weekKey][newDateStr].push(...newShifts);
+                    }
+                });
+                
+                this.saveData();
+                this.renderSchedule();
+                this.showNotification('Hónap sikeresen beillesztve!', 'success');
             },
             'Beillesztés',
             'bg-blue-600 hover:bg-blue-700'
