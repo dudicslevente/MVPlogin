@@ -150,7 +150,13 @@
                             class="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 flex items-center"
                             disabled id="pasteBtn">
                             <i data-feather="clipboard" class="mr-2"></i>
-                            Hét Beillesztése
+                            <span id="pasteBtnText">Hét Beillesztése</span>
+                        </button>
+                        <button onclick="pasteToSelectedWeeks()"
+                            class="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 flex items-center"
+                            disabled id="pasteToSelectedBtn">
+                            <i data-feather="clipboard" class="mr-2"></i>
+                            Kiválasztott hetekre
                         </button>
                         <button onclick="clearCurrentPeriod()"
                             class="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 flex items-center">
@@ -231,7 +237,7 @@
             <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800 flex items-center">
                     <i data-feather="users" class="mr-2"></i>
-                    Alkalmazotti Kezelés
+                    Alkalmazottak Kezelése
                 </h1>
                 <div class="flex space-x-3">
                     <button onclick="openDepartmentModal()"

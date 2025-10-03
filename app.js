@@ -10,6 +10,7 @@ class ScheduleManager {
         this.currentPage = 'schedule';
         this.copiedWeek = null;
         this.copiedMonth = null;
+        this.selectedWeeks = [];
         this.editingEmployee = null;
         this.editingShift = null;
         this.notificationId = 0;
@@ -406,12 +407,13 @@ avigation
             
             // Update copy/paste button text for week view
             if (copyBtn) {
+                copyBtn.style.display = 'flex'; // Show copy button in week view
                 const copyText = isEnglish ? 'Copy Week' : 'Hét Másolása';
                 copyBtn.innerHTML = `<i data-feather="copy" class="mr-2"></i>${copyText}`;
             }
             if (pasteBtn) {
                 const pasteText = isEnglish ? 'Paste Week' : 'Hét Beillesztése';
-                pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+                document.getElementById('pasteBtnText').textContent = pasteText;
                 
                 // Enable/disable paste button based on copied week data
                 if (this.copiedWeek) {
@@ -421,6 +423,12 @@ avigation
                     pasteBtn.disabled = true;
                     pasteBtn.classList.add('opacity-50');
                 }
+            }
+            
+            // Hide paste to selected weeks button in week view
+            const pasteToSelectedBtn = document.getElementById('pasteToSelectedBtn');
+            if (pasteToSelectedBtn) {
+                pasteToSelectedBtn.style.display = 'none';
             }
         } else {
             const monthNames = isEnglish ? 
@@ -434,21 +442,38 @@ avigation
             clearButtonText.textContent = isEnglish ? 'Clear Month' : 'Hónap Törlése';
             
             // Update copy/paste button text for month view
+            // In month view, we only allow pasting weeks, not copying months
             if (copyBtn) {
-                const copyText = isEnglish ? 'Copy Month' : 'Hónap Másolása';
-                copyBtn.innerHTML = `<i data-feather="copy" class="mr-2"></i>${copyText}`;
+                copyBtn.style.display = 'none'; // Hide copy button in month view
             }
             if (pasteBtn) {
-                const pasteText = isEnglish ? 'Paste Month' : 'Hónap Beillesztése';
-                pasteBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteText}`;
+                const pasteText = isEnglish ? 'Paste Week' : 'Hét Beillesztése';
+                document.getElementById('pasteBtnText').textContent = pasteText;
                 
-                // Enable/disable paste button based on copied month data
-                if (this.copiedMonth) {
+                // Enable/disable paste button based on copied week data
+                if (this.copiedWeek) {
                     pasteBtn.disabled = false;
                     pasteBtn.classList.remove('opacity-50');
                 } else {
                     pasteBtn.disabled = true;
                     pasteBtn.classList.add('opacity-50');
+                }
+            }
+            
+            // Show and update paste to selected weeks button in month view
+            const pasteToSelectedBtn = document.getElementById('pasteToSelectedBtn');
+            if (pasteToSelectedBtn) {
+                pasteToSelectedBtn.style.display = 'flex'; // Show in month view
+                const pasteToSelectedText = isEnglish ? 'To Selected Weeks' : 'Kiválasztott hetekre';
+                pasteToSelectedBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${pasteToSelectedText}`;
+                
+                // Enable/disable paste to selected button based on copied week data and selections
+                if (this.copiedWeek && this.selectedWeeks && this.selectedWeeks.length > 0) {
+                    pasteToSelectedBtn.disabled = false;
+                    pasteToSelectedBtn.classList.remove('opacity-50');
+                } else {
+                    pasteToSelectedBtn.disabled = true;
+                    pasteToSelectedBtn.classList.add('opacity-50');
                 }
             }
         }
@@ -476,6 +501,11 @@ avigation
         // Update view containers
         document.querySelectorAll('.schedule-view').forEach(v => v.classList.remove('active'));
         document.getElementById(view + 'View').classList.add('active');
+        
+        // Clear week selections when switching views
+        if (view === 'week') {
+            this.clearWeekSelections();
+        }
         
         this.updatePeriodLabels();
         this.renderSchedule();
@@ -555,10 +585,11 @@ avigation
         
         days.forEach((day, index) => {
             const dayColumn = document.createElement('div');
-            dayColumn.className = 'day-column';
-            
             const date = new Date(weekDates[index] + 'T00:00:00');
             const isToday = this.isToday(date);
+            
+            // Add today class to the day column for highlighting
+            dayColumn.className = `day-column ${isToday ? 'today' : ''}`;
             
             // Day header
             const header = document.createElement('div');
@@ -712,6 +743,10 @@ avigation
         const container = document.getElementById('monthGrid');
         if (!container) return;
         
+        // Clean up any existing trash icons
+        const existingTrashIcons = container.querySelectorAll('.week-trash-container');
+        existingTrashIcons.forEach(icon => icon.remove());
+        
         const year = this.currentMonth.year;
         const month = this.currentMonth.month;
         
@@ -746,9 +781,27 @@ avigation
             container.appendChild(dayHeader);
         });
         
+        // Track weeks for click handling
+        let currentWeekStart = null;
+        let weekCells = [];
+        
         // Generate calendar days
         for (let i = 0; i < daysToShow; i++) {
             const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+            
+            // Check if we're starting a new week (Monday)
+            const isMonday = date.getDay() === 1; // 1 = Monday in JavaScript
+            if (isMonday || i === 0) {
+                // If we have a previous week, add click handler and trash icon to its cells
+                if (weekCells.length > 0 && currentWeekStart) {
+                    this.addWeekClickHandler(weekCells, currentWeekStart);
+                    this.addWeekTrashIcon(weekCells, currentWeekStart);
+                }
+                
+                // Start new week
+                currentWeekStart = new Date(date);
+                weekCells = [];
+            }
             
             const dayCell = document.createElement('div');
             dayCell.className = 'month-day';
@@ -785,7 +838,21 @@ avigation
             // Make droppable
             this.makeSlotDroppable(dayCell, dateStr);
             
+            // Add to current week cells
+            weekCells.push(dayCell);
+            
             container.appendChild(dayCell);
+        }
+        
+        // Handle the last week
+        if (weekCells.length > 0 && currentWeekStart) {
+            this.addWeekClickHandler(weekCells, currentWeekStart);
+            this.addWeekTrashIcon(weekCells, currentWeekStart);
+        }
+        
+        // Initialize feather icons for trash icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
         }
     }
 
@@ -1465,20 +1532,217 @@ avigation
         return date.toDateString() === today.toDateString();
     }
 
+    addWeekClickHandler(weekCells, weekStartDate) {
+        // Add click handler to each cell in the week
+        weekCells.forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                // Only handle clicks in month view when we have copied week data
+                if (this.currentView === 'month' && this.copiedWeek) {
+                    e.stopPropagation();
+                    
+                    // Toggle selection for this week
+                    const isSelected = weekCells.some(c => c.classList.contains('selected-week'));
+                    if (isSelected) {
+                        // If already selected, deselect
+                        weekCells.forEach(c => c.classList.remove('selected-week'));
+                        // Remove from selected weeks array
+                        if (this.selectedWeeks) {
+                            const weekStartStr = this.formatDate(weekStartDate);
+                            this.selectedWeeks = this.selectedWeeks.filter(w => w !== weekStartStr);
+                        }
+                    } else {
+                        // Select this week
+                        weekCells.forEach(c => c.classList.add('selected-week'));
+                        // Add to selected weeks array
+                        if (!this.selectedWeeks) {
+                            this.selectedWeeks = [];
+                        }
+                        const weekStartStr = this.formatDate(weekStartDate);
+                        if (!this.selectedWeeks.includes(weekStartStr)) {
+                            this.selectedWeeks.push(weekStartStr);
+                        }
+                        
+                        // Show notification about multiple selection
+                        this.showNotification('Több hét kiválasztása: Kattints a "Beillesztés kiválasztott hetekre" gombra', 'info', null, 3000);
+                    }
+                    
+                    // Update the paste to selected weeks button
+                    this.updatePasteToSelectedButton();
+                }
+            });
+        });
+    }
+    
+    addWeekTrashIcon(weekCells, weekStartDate) {
+        // Create a container for the trash icon outside the grid
+        const monthGrid = document.getElementById('monthGrid');
+        if (!monthGrid) return;
+        
+        // Create trash icon container
+        const trashContainer = document.createElement('div');
+        trashContainer.className = 'week-trash-container';
+        trashContainer.style.cssText = `
+            position: absolute;
+            top: ${weekCells[0].offsetTop + 5}px;
+            right: -25px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // Create trash icon
+        const trashIcon = document.createElement('i');
+        trashIcon.setAttribute('data-feather', 'trash-2');
+        trashIcon.className = 'week-trash-icon';
+        trashIcon.style.cssText = `
+            width: 16px;
+            height: 16px;
+            color: #ef4444;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            padding: 2px;
+        `;
+        
+        trashContainer.appendChild(trashIcon);
+        monthGrid.appendChild(trashContainer);
+        
+        // Add hover events to show/hide trash icon
+        weekCells.forEach(cell => {
+            cell.addEventListener('mouseenter', () => {
+                trashContainer.style.opacity = '1';
+            });
+            
+            cell.addEventListener('mouseleave', () => {
+                trashContainer.style.opacity = '0';
+            });
+        });
+        
+        // Add click event to trash icon
+        trashIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const weekStartStr = this.formatDate(weekStartDate);
+            
+            // Show confirmation dialog
+            const weekEnd = new Date(weekStartDate);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            this.showConfirmation(
+                'Hét Törlése',
+                `Biztosan törölni szeretnéd a műszakbeosztást a következő időszakra: ${this.formatDateDisplay(weekStartDate)} - ${this.formatDateDisplay(weekEnd)}?`,
+                () => {
+                    // Clear the week
+                    this.clearWeekSchedule(weekStartStr);
+                    this.showNotification('Hét sikeresen törölve!', 'success');
+                },
+                'Törlés',
+                'bg-red-600 hover:bg-red-700'
+            );
+        });
+    }
+
     // Copy/Paste Functionality
     copyWeek() {
         if (this.currentView === 'week') {
             this.copyCurrentWeek();
-        } else {
-            this.copyCurrentMonth();
         }
+        // In month view, we don't copy the entire month anymore
     }
 
     pasteWeek() {
         if (this.currentView === 'week') {
             this.pasteCurrentWeek();
         } else {
-            this.pasteCurrentMonth();
+            // In month view, we still allow pasting weeks
+            if (this.copiedWeek) {
+                this.showNotification('Kérjük, kattints egy hétre a havi nézetben a beillesztéshez', 'info');
+            } else {
+                this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
+            }
+        }
+    }
+
+    pasteToSelectedWeeks() {
+        if (this.currentView !== 'month') return;
+        
+        if (!this.copiedWeek) {
+            this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
+            return;
+        }
+        
+        if (!this.selectedWeeks || this.selectedWeeks.length === 0) {
+            this.showNotification('Kérjük, válassz ki egy vagy több hetet a beillesztéshez', 'warning');
+            return;
+        }
+        
+        // Show confirmation dialog
+        const weekCount = this.selectedWeeks.length;
+        const weekText = weekCount === 1 ? 'hét' : `${weekCount} hét`;
+        this.showConfirmation(
+            'Beillesztés kiválasztott hetekre',
+            `Biztosan beilleszted a másolt hetet ${weekText} a havi nézetben?`,
+            () => {
+                // Paste to all selected weeks
+                this.selectedWeeks.forEach(weekStartStr => {
+                    this.pasteWeekToSelectedWeek(weekStartStr);
+                });
+                
+                // Clear selections
+                this.clearWeekSelections();
+                
+                this.showNotification(`${weekCount} hét sikeresen frissítve!`, 'success');
+            },
+            'Beillesztés',
+            'bg-green-600 hover:bg-green-700'
+        );
+    }
+    
+    clearWeekSelections() {
+        // Remove all week selections
+        document.querySelectorAll('.month-day.selected-week').forEach(c => 
+            c.classList.remove('selected-week'));
+        this.selectedWeeks = [];
+        
+        // Update the paste to selected weeks button
+        this.updatePeriodLabels();
+    }
+    
+    updatePasteToSelectedButton() {
+        // Update the paste to selected weeks button state
+        const pasteToSelectedBtn = document.getElementById('pasteToSelectedBtn');
+        if (pasteToSelectedBtn && this.currentView === 'month') {
+            const isEnglish = document.documentElement.lang === 'en' || document.title.includes('Employee Schedule');
+            
+            // Enable/disable paste to selected button based on copied week data and selections
+            if (this.copiedWeek && this.selectedWeeks && this.selectedWeeks.length > 0) {
+                pasteToSelectedBtn.disabled = false;
+                pasteToSelectedBtn.classList.remove('opacity-50');
+                
+                // Update button text to show number of selected weeks
+                const weekCount = this.selectedWeeks.length;
+                const weekText = isEnglish ? 
+                    (weekCount === 1 ? '1 Week Selected' : `${weekCount} Weeks Selected`) :
+                    (weekCount === 1 ? '1 hét kiválasztva' : `${weekCount} hét kiválasztva`);
+                
+                const baseText = isEnglish ? 'To Selected Weeks' : 'Kiválasztott hetekre';
+                pasteToSelectedBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${baseText} (${weekCount})`;
+            } else {
+                pasteToSelectedBtn.disabled = true;
+                pasteToSelectedBtn.classList.add('opacity-50');
+                
+                const baseText = isEnglish ? 'To Selected Weeks' : 'Kiválasztott hetekre';
+                pasteToSelectedBtn.innerHTML = `<i data-feather="clipboard" class="mr-2"></i>${baseText}`;
+            }
+            
+            // Update feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
         }
     }
 
@@ -1495,41 +1759,9 @@ avigation
     }
 
     copyCurrentMonth() {
-        const year = this.currentMonth.year;
-        const month = this.currentMonth.month;
-        
-        // Collect all shifts that belong to the current month (excluding previous/next month days)
-        const monthSchedules = {};
-        let hasSchedules = false;
-        
-        Object.keys(this.schedules).forEach(weekKey => {
-            if (this.schedules[weekKey]) {
-                Object.keys(this.schedules[weekKey]).forEach(dateStr => {
-                    const date = new Date(dateStr + 'T00:00:00');
-                    // Only include dates that belong to the current month
-                    if (date.getFullYear() === year && date.getMonth() === month) {
-                        if (!monthSchedules[dateStr]) {
-                            monthSchedules[dateStr] = [];
-                        }
-                        monthSchedules[dateStr] = [...this.schedules[weekKey][dateStr]];
-                        hasSchedules = true;
-                    }
-                });
-            }
-        });
-        
-        if (hasSchedules) {
-            this.copiedMonth = {
-                year: year,
-                month: month,
-                schedules: JSON.parse(JSON.stringify(monthSchedules))
-            };
-            document.getElementById('pasteBtn').disabled = false;
-            document.getElementById('pasteBtn').classList.remove('opacity-50');
-            this.showNotification('Hónap sikeresen másolva!', 'success');
-        } else {
-            this.showNotification('Nincs másolható műszakbeosztás erre a hónapra.', 'warning');
-        }
+        // This functionality has been removed as per requirements
+        // Users can only copy weeks, not entire months
+        this.showNotification('A hónap másolása már nem elérhető. Kérjük, másoljon egy hetet inkább.', 'info');
     }
 
     pasteCurrentWeek() {
@@ -1569,73 +1801,39 @@ avigation
         );
     }
 
-    pasteCurrentMonth() {
-        if (!this.copiedMonth) {
-            this.showNotification('Nincs másolt hónap a beillesztéshez.', 'warning');
+    pasteWeekToSelectedWeek(weekStartStr) {
+        if (!this.copiedWeek) {
+            this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
             return;
         }
         
-        this.showConfirmation(
-            'Havi Műszakbeosztás Beillesztése',
-            'Ez lecseréli a jelenlegi hónap műszakbeosztását a másolt hónappal. Biztosan folytatod?',
-            () => {
-                const targetYear = this.currentMonth.year;
-                const targetMonth = this.currentMonth.month;
-                
-                // Clear current month schedules first
-                Object.keys(this.schedules).forEach(weekKey => {
-                    if (this.schedules[weekKey]) {
-                        Object.keys(this.schedules[weekKey]).forEach(dateStr => {
-                            const date = new Date(dateStr + 'T00:00:00');
-                            if (date.getFullYear() === targetYear && date.getMonth() === targetMonth) {
-                                delete this.schedules[weekKey][dateStr];
-                            }
-                        });
-                    }
-                });
-                
-                // Calculate the offset between copied month and target month
-                const copiedDate = new Date(this.copiedMonth.year, this.copiedMonth.month, 1);
-                const targetDate = new Date(targetYear, targetMonth, 1);
-                
-                // Paste copied shifts with adjusted dates
-                Object.keys(this.copiedMonth.schedules).forEach(originalDateStr => {
-                    const originalDate = new Date(originalDateStr + 'T00:00:00');
-                    const dayOfMonth = originalDate.getDate();
-                    
-                    // Create corresponding date in target month
-                    const newDate = new Date(targetYear, targetMonth, dayOfMonth);
-                    
-                    // Only paste if the new date is valid and in the target month
-                    if (newDate.getMonth() === targetMonth) {
-                        const newDateStr = this.formatDate(newDate);
-                        const weekKey = this.getWeekKey(newDate);
-                        
-                        if (!this.schedules[weekKey]) {
-                            this.schedules[weekKey] = {};
-                        }
-                        if (!this.schedules[weekKey][newDateStr]) {
-                            this.schedules[weekKey][newDateStr] = [];
-                        }
-                        
-                        // Copy shifts with new IDs and dates
-                        const newShifts = this.copiedMonth.schedules[originalDateStr].map(shift => ({
-                            ...shift,
-                            id: this.generateId(),
-                            date: newDateStr
-                        }));
-                        
-                        this.schedules[weekKey][newDateStr].push(...newShifts);
-                    }
-                });
-                
-                this.saveData();
-                this.renderSchedule();
-                this.showNotification('Hónap sikeresen beillesztve!', 'success');
-            },
-            'Beillesztés',
-            'bg-blue-600 hover:bg-blue-700'
-        );
+        const weekKey = weekStartStr;
+        const weekDates = this.getWeekDates(weekStartStr);
+        
+        // Clear target week
+        this.schedules[weekKey] = {};
+        
+        // Paste copied shifts with new dates
+        Object.keys(this.copiedWeek).forEach((originalDate, index) => {
+            if (index < weekDates.length) {
+                const newDate = weekDates[index];
+                this.schedules[weekKey][newDate] = this.copiedWeek[originalDate].map(shift => ({
+                    ...shift,
+                    id: this.generateId(),
+                    date: newDate
+                }));
+            }
+        });
+        
+        this.saveData();
+        this.renderSchedule();
+        this.showNotification('Hét sikeresen beillesztve!', 'success');
+    }
+
+    pasteCurrentMonth() {
+        // This functionality has been removed as per requirements
+        // Users can only paste weeks, not entire months
+        this.showNotification('A hónap beillesztése már nem elérhető. Kérjük, illesszen be egy hetet inkább.', 'info');
     }
 
     clearCurrentPeriod() {
@@ -1658,6 +1856,14 @@ avigation
                 this.showNotification('Heti műszakbeosztás sikeresen törölve!', 'success');
             }
         );
+    }
+    
+    clearWeekSchedule(weekStartStr) {
+        // Clear schedule for the specified week
+        const weekKey = weekStartStr;
+        this.schedules[weekKey] = {};
+        this.saveData();
+        this.renderSchedule();
     }
 
     clearMonth() {
@@ -2499,6 +2705,12 @@ avigation
     cancelConfirmation() {
         this.confirmationCallback = null;
         this.closeConfirmationModal();
+        
+        // Restore the original cancelConfirmation function if it was overridden
+        if (this.originalCancelConfirmation) {
+            this.cancelConfirmation = this.originalCancelConfirmation;
+            this.originalCancelConfirmation = null;
+        }
     }
 
     closeConfirmationModal() {
@@ -2776,6 +2988,10 @@ avigation
 // Global functions for HTML onclick handlers
 function showPage(page) {
     scheduleManager.showPage(page);
+}
+
+function pasteToSelectedWeeks() {
+    scheduleManager.pasteToSelectedWeeks();
 }
 
 function switchView(view) {
