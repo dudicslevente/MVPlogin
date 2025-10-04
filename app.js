@@ -111,9 +111,9 @@ class ScheduleManager {
     getSampleEmployees() {
         return [
             {
-                id: 1,
-                firstName: 'John',
-                lastName: 'Doe',
+                id: this.generateId(),
+                name: 'John Doe',
+                nickname: '',
                 email: 'john.doe@example.com',
                 phone: '555-0101',
                 department: 'service',
@@ -124,17 +124,18 @@ class ScheduleManager {
                 overtimePremium: 50,
                 vacationDaysPerYear: 14,
                 sickDaysPerYear: 5,
-                workTypes: ['Pincér', 'Házigazda'],
                 customFields: '',
                 isActive: true,
                 color: 'color-1',
                 customColor: '#3b82f6',
-                profilePic: null
+                profilePic: null,
+                defaultStartTime: '08:00',
+                defaultEndTime: '16:00'
             },
             {
-                id: 2,
-                firstName: 'Jane',
-                lastName: 'Smith',
+                id: this.generateId(),
+                name: 'Jane Smith',
+                nickname: '',
                 email: 'jane.smith@example.com',
                 phone: '555-0102',
                 department: 'kitchen',
@@ -145,17 +146,18 @@ class ScheduleManager {
                 overtimePremium: 50,
                 vacationDaysPerYear: 21,
                 sickDaysPerYear: 7,
-                workTypes: ['Szakacs', 'Konyhai Előkészítő'],
                 customFields: 'Főszakacs - 5 év tapasztalat',
                 isActive: true,
                 color: 'color-2',
                 customColor: '#10b981',
-                profilePic: null
+                profilePic: null,
+                defaultStartTime: '08:00',
+                defaultEndTime: '16:00'
             },
             {
-                id: 3,
-                firstName: 'Mike',
-                lastName: 'Johnson',
+                id: this.generateId(),
+                name: 'Mike Johnson',
+                nickname: '',
                 email: 'mike.johnson@example.com',
                 phone: '555-0103',
                 department: 'service',
@@ -166,17 +168,18 @@ class ScheduleManager {
                 overtimePremium: 50,
                 vacationDaysPerYear: 14,
                 sickDaysPerYear: 5,
-                workTypes: ['Italkeverő', 'Pincér'],
                 customFields: '',
                 isActive: true,
                 color: 'color-3',
                 customColor: '#8b5cf6',
-                profilePic: null
+                profilePic: null,
+                defaultStartTime: '08:00',
+                defaultEndTime: '16:00'
             },
             {
-                id: 4,
-                firstName: 'Sarah',
-                lastName: 'Williams',
+                id: this.generateId(),
+                name: 'Sarah Williams',
+                nickname: '',
                 email: 'sarah.williams@example.com',
                 phone: '555-0104',
                 department: 'service',
@@ -187,17 +190,18 @@ class ScheduleManager {
                 overtimePremium: 50,
                 vacationDaysPerYear: 10,
                 sickDaysPerYear: 3,
-                workTypes: ['Házigazda', 'Pénztáros'],
                 customFields: 'Részidős diák',
                 isActive: true,
                 color: 'color-4',
                 customColor: '#f59e0b',
-                profilePic: null
+                profilePic: null,
+                defaultStartTime: '08:00',
+                defaultEndTime: '16:00'
             },
             {
-                id: 5,
-                firstName: 'David',
-                lastName: 'Brown',
+                id: this.generateId(),
+                name: 'David Brown',
+                nickname: '',
                 email: 'david.brown@example.com',
                 phone: '555-0105',
                 department: 'management',
@@ -208,12 +212,13 @@ class ScheduleManager {
                 overtimePremium: 50,
                 vacationDaysPerYear: 21,
                 sickDaysPerYear: 10,
-                workTypes: ['Kezelő', 'Felügyelő'],
                 customFields: 'Helyettes Kezelő',
                 isActive: true,
                 color: 'color-5',
                 customColor: '#ef4444',
-                profilePic: null
+                profilePic: null,
+                defaultStartTime: '08:00',
+                defaultEndTime: '16:00'
             }
         ];
     }
@@ -1428,7 +1433,11 @@ avigation
             sickDaysPerYear: parseInt(document.getElementById('sickDaysPerYear').value) || 0,
             customFields: document.getElementById('customFields').value,
             isActive: document.getElementById('isActive').checked,
-            color: this.editingEmployee ? this.editingEmployee.color : this.getNextEmployeeColor()
+            color: this.editingEmployee ? this.editingEmployee.color : this.getNextEmployeeColor(),
+            customColor: document.getElementById('employeeColor').value,
+            profilePic: this.currentProfilePic,
+            defaultStartTime: (document.getElementById('defaultStartTime') && document.getElementById('defaultStartTime').value) || '08:00',
+            defaultEndTime: (document.getElementById('defaultEndTime') && document.getElementById('defaultEndTime').value) || '16:00'
         };
         
         if (!employee.name || !employee.department || !employee.position) {
