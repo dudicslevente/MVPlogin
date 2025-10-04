@@ -6,4 +6,8 @@
 
 # 3️⃣ Optional: force trailing slash consistency (redirect /about → /about/)
 # Remove this if you prefer URLs without trailing slashes
+<<<<<<< HEAD
 /*   /:splat/   301
+=======
+/*   /:splat/   301
+>>>>>>> 9138661043521d65a0471c5ff18ff274927a02a0
