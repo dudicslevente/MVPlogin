@@ -728,10 +728,32 @@ avigation
             shiftElement.style.borderLeftColor = borderColor;
         }
         
+        // Display different content based on shift type
+        let timeDisplay = `${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}`;
+        let positionDisplay = shift.position;
+        
+        // For non-regular shifts, show the type instead of time but keep the position
+        if (shift.type !== 'regular') {
+            switch (shift.type) {
+                case 'vacation':
+                    timeDisplay = 'Szabadság';
+                    break;
+                case 'sick':
+                    timeDisplay = 'Betegség';
+                    break;
+                case 'holiday':
+                    timeDisplay = 'Ünnep';
+                    break;
+                case 'training':
+                    timeDisplay = 'Képzés';
+                    break;
+            }
+        }
+        
         shiftElement.innerHTML = `
             <div class="day-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
-            <div class="day-shift-time">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
-            <div class="day-shift-position">${shift.position}</div>
+            <div class="day-shift-time">${timeDisplay}</div>
+            <div class="day-shift-position">${positionDisplay}</div>
             <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
                 <i data-feather="x" class="w-3 h-3"></i>
             </button>
@@ -1002,11 +1024,34 @@ avigation
         card.dataset.originalDate = shift.date;
         card.draggable = true;
         
+        // Display different content based on shift type
+        let timeDisplay = `${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}`;
+        let positionDisplay = shift.position;
+        
+        // For non-regular shifts, show the type instead of time but keep the position
+        if (shift.type !== 'regular') {
+            switch (shift.type) {
+                case 'vacation':
+                    timeDisplay = 'Szabadság';
+                    break;
+                case 'sick':
+                    timeDisplay = 'Betegszabadság';
+                    break;
+                case 'holiday':
+                    timeDisplay = 'Ünnep';
+                    break;
+                case 'training':
+                    timeDisplay = 'Képzés';
+                    break;
+            }
+        }
+        
         if (compact) {
-            // Month view: show only the employee name (no time)
+            // Month view: show only the employee name and shift type
             card.innerHTML = `
                 <div class="text-xs truncate">
                     <span class="font-medium">${this.getEmployeeDisplayName(employee)}</span>
+                    <div class="text-xs opacity-75">${timeDisplay}</div>
                 </div>
             `;
             // Apply employee-assigned color for compact (month) cards
@@ -1020,8 +1065,8 @@ avigation
                 <div class="flex justify-between items-center">
                     <div class="truncate">
                         <div class="font-medium">${this.getEmployeeDisplayName(employee)}</div>
-                        <div class="text-xs opacity-75">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
-                        <div class="text-xs text-gray-700 truncate">${shift.position || ''}</div>
+                        <div class="text-xs opacity-75">${timeDisplay}</div>
+                        <div class="text-xs text-gray-700 truncate">${positionDisplay || ''}</div>
                     </div>
                     <button class="remove-shift text-xs opacity-50 hover:opacity-100 ml-1">
                         <i data-feather="x" class="w-3 h-3"></i>
@@ -3115,11 +3160,33 @@ avigation
             dayShifts.forEach(shift => {
                 const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 if (employee) {
+                    // Display different content based on shift type
+                    let timeDisplay = `${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}`;
+                    let positionDisplay = shift.position;
+                    
+                    // For non-regular shifts, show the type instead of time but keep the position
+                    if (shift.type !== 'regular') {
+                        switch (shift.type) {
+                            case 'vacation':
+                                timeDisplay = 'Szabadság';
+                                break;
+                            case 'sick':
+                                timeDisplay = 'Betegszabadság';
+                                break;
+                            case 'holiday':
+                                timeDisplay = 'Ünnep';
+                                break;
+                            case 'training':
+                                timeDisplay = 'Képzés';
+                                break;
+                        }
+                    }
+                    
                     html += `
                         <div class="print-shift ${shift.type}">
                             <div class="print-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
-                            <div class="print-shift-time">${this.formatTime(shift.startTime)} - ${this.formatTime(shift.endTime)}</div>
-                            <div class="print-shift-position">${shift.position}</div>
+                            <div class="print-shift-time">${timeDisplay}</div>
+                            <div class="print-shift-position">${positionDisplay}</div>
                         </div>
                     `;
                 }
@@ -3168,9 +3235,30 @@ avigation
             dayShifts.forEach(shift => {
                 const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 if (employee) {
+                    // Display different content based on shift type
+                    let displayText = this.getEmployeeDisplayName(employee);
+                    
+                    // For non-regular shifts, show the type instead of just the name
+                    if (shift.type !== 'regular') {
+                        switch (shift.type) {
+                            case 'vacation':
+                                displayText += ' (Szabadság)';
+                                break;
+                            case 'sick':
+                                displayText += ' (Betegszabadság)';
+                                break;
+                            case 'holiday':
+                                displayText += ' (Ünnep)';
+                                break;
+                            case 'training':
+                                displayText += ' (Képzés)';
+                                break;
+                        }
+                    }
+                    
                     html += `
                         <div class="print-shift ${shift.type}">
-                            <div class="print-shift-employee">${this.getEmployeeDisplayName(employee)}</div>
+                            <div class="print-shift-employee">${displayText}</div>
                         </div>
                     `;
                 }

@@ -846,6 +846,108 @@ body {
     background-color: var(--bg-tertiary) !important;
 }
 
+/* Fix for employee card colors in dark mode */
+[data-theme="dark"] .day-shift.has-custom-color {
+    background-color: rgba(var(--employee-color), 0.15) !important;
+}
+
+/* Fix for employee list card colors in dark mode */
+[data-theme="dark"] .employee-card-with-pic.color-1 {
+    background-color: var(--color-1) !important;
+    color: #1e40af !important;
+    border-color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-2 {
+    background-color: var(--color-2) !important;
+    color: #166534 !important;
+    border-color: #22c55e !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-3 {
+    background-color: var(--color-3) !important;
+    color: #3730a3 !important;
+    border-color: #6366f1 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-4 {
+    background-color: var(--color-4) !important;
+    color: #92400e !important;
+    border-color: #f59e0b !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-5 {
+    background-color: var(--color-5) !important;
+    color: #991b1b !important;
+    border-color: #ef4444 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-6 {
+    background-color: var(--color-6) !important;
+    color: #7c3aed !important;
+    border-color: #8b5cf6 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-7 {
+    background-color: var(--color-7) !important;
+    color: #047857 !important;
+    border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.color-8 {
+    background-color: var(--color-8) !important;
+    color: #be185d !important;
+    border-color: #ec4899 !important;
+}
+
+[data-theme="dark"] .shift-card.color-1,
+[data-theme="dark"] .day-shift.regular.color-1 {
+    background-color: var(--color-1) !important;
+    color: #1e40af !important;
+}
+
+[data-theme="dark"] .shift-card.color-2,
+[data-theme="dark"] .day-shift.regular.color-2 {
+    background-color: var(--color-2) !important;
+    color: #166534 !important;
+}
+
+[data-theme="dark"] .shift-card.color-3,
+[data-theme="dark"] .day-shift.regular.color-3 {
+    background-color: var(--color-3) !important;
+    color: #3730a3 !important;
+}
+
+[data-theme="dark"] .shift-card.color-4,
+[data-theme="dark"] .day-shift.regular.color-4 {
+    background-color: var(--color-4) !important;
+    color: #92400e !important;
+}
+
+[data-theme="dark"] .shift-card.color-5,
+[data-theme="dark"] .day-shift.regular.color-5 {
+    background-color: var(--color-5) !important;
+    color: #991b1b !important;
+}
+
+[data-theme="dark"] .shift-card.color-6,
+[data-theme="dark"] .day-shift.regular.color-6 {
+    background-color: var(--color-6) !important;
+    color: #7c3aed !important;
+}
+
+[data-theme="dark"] .shift-card.color-7,
+[data-theme="dark"] .day-shift.regular.color-7 {
+    background-color: var(--color-7) !important;
+    color: #047857 !important;
+}
+
+[data-theme="dark"] .shift-card.color-8,
+[data-theme="dark"] .day-shift.regular.color-8 {
+    background-color: var(--color-8) !important;
+    color: #be185d !important;
+}
+
 [data-theme="dark"] .month-day {
     background-color: var(--bg-primary) !important;
     border-color: var(--border-primary) !important;
@@ -1167,6 +1269,47 @@ body {
 /* Ensure employee names in month view are clearly readable: black in light mode, white in dark mode. */
 .month-day .shift-card { color: #000; }
 [data-theme="dark"] .month-day .shift-card { color: #fff; }
+
+/* Fix for employee card colors in month view in dark mode */
+[data-theme="dark"] .month-day .shift-card.color-1 {
+    background-color: var(--color-1) !important;
+    color: #1e40af !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-2 {
+    background-color: var(--color-2) !important;
+    color: #166534 !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-3 {
+    background-color: var(--color-3) !important;
+    color: #3730a3 !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-4 {
+    background-color: var(--color-4) !important;
+    color: #92400e !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-5 {
+    background-color: var(--color-5) !important;
+    color: #991b1b !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-6 {
+    background-color: var(--color-6) !important;
+    color: #7c3aed !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-7 {
+    background-color: var(--color-7) !important;
+    color: #047857 !important;
+}
+
+[data-theme="dark"] .month-day .shift-card.color-8 {
+    background-color: var(--color-8) !important;
+    color: #be185d !important;
+}
 
 /* Statistics View Controls */
 .stats-view-btn {
