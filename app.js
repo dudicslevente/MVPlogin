@@ -53,6 +53,37 @@ class ScheduleManager {
         
         if (savedEmployees) {
             this.employees = JSON.parse(savedEmployees);
+            // Ensure all employees have the required properties for backward compatibility
+            this.employees = this.employees.map(emp => {
+                // Ensure employee has all required properties
+                const updatedEmp = { ...emp };
+                
+                // Ensure customColor property exists
+                if (!updatedEmp.hasOwnProperty('customColor')) {
+                    updatedEmp.customColor = null;
+                }
+                
+                // Ensure default time properties exist
+                if (!updatedEmp.hasOwnProperty('defaultStartTime')) {
+                    updatedEmp.defaultStartTime = '08:00';
+                }
+                
+                if (!updatedEmp.hasOwnProperty('defaultEndTime')) {
+                    updatedEmp.defaultEndTime = '16:00';
+                }
+                
+                // Ensure profilePic property exists
+                if (!updatedEmp.hasOwnProperty('profilePic')) {
+                    updatedEmp.profilePic = null;
+                }
+                
+                // Ensure nickname property exists
+                if (!updatedEmp.hasOwnProperty('nickname')) {
+                    updatedEmp.nickname = '';
+                }
+                
+                return updatedEmp;
+            });
         } else {
             this.employees = this.getSampleEmployees();
         }
@@ -456,6 +487,124 @@ avigation
         }
     }
 
+    // New function to go to current period based on selected view
+    goToCurrentPeriod() {
+        const now = new Date();
+        
+        if (this.currentView === 'week') {
+            // Set to current week
+            const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // Make Monday the first day of the week
+            const day = (startOfWeek.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+            startOfWeek.setDate(startOfWeek.getDate() - day);
+            this.currentWeek = this.formatDate(startOfWeek);
+        } else {
+            // Set to current month
+            this.currentMonth = {
+                year: now.getFullYear(),
+                month: now.getMonth()
+            };
+        }
+        
+        this.updatePeriodLabels();
+        this.renderSchedule();
+        //this.showNotification('Aktuális időszakra váltva', 'info');
+    }
+
+    // Navigation
+    navigateTime(direction) {
+        if (this.currentView === 'week') {
+            this.navigateWeek(direction);
+        } else {
+            this.navigateMonth(direction);
+        }
+        this.updatePeriodLabels();
+        this.renderSchedule();
+    }
+
+    navigateWeek(direction) {
+        const current = new Date(this.currentWeek + 'T00:00:00');
+        if (direction === 'next') {
+            current.setDate(current.getDate() + 7);
+        } else if (direction === 'prev') {
+            current.setDate(current.getDate() - 7);
+        }
+        this.currentWeek = this.formatDate(current);
+    }
+
+    navigateMonth(direction) {
+        if (direction === 'next') {
+            this.currentMonth.month++;
+            if (this.currentMonth.month > 11) {
+                this.currentMonth.month = 0;
+                this.currentMonth.year++;
+            }
+        } else if (direction === 'prev') {
+            this.currentMonth.month--;
+            if (this.currentMonth.month < 0) {
+                this.currentMonth.month = 11;
+                this.currentMonth.year--;
+            }
+        }
+    }
+
+    updatePeriodLabels() {
+        const labelElement = document.getElementById('currentPeriodLabel');
+        const datesElement = document.getElementById('currentPeriodDates');
+        const clearButtonText = document.getElementById('clearButtonText');
+        const copyBtn = document.querySelector("button[onclick='copyWeek()']" );
+        const pasteBtn = document.querySelector("button[onclick='pasteWeek()']" );
+        
+        // Detect if we're on the English page
+        const isEnglish = document.documentElement.lang === 'en' || document.title.includes('Employee Schedule');
+        
+        if (this.currentView === 'week') {
+            const weekStart = new Date(this.currentWeek + 'T00:00:00');
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            labelElement.textContent = isEnglish ? 'Week View' : 'Heti Nézet';
+            datesElement.textContent = `${this.formatDateDisplay(weekStart)} - ${this.formatDateDisplay(weekEnd)}`;
+            clearButtonText.textContent = isEnglish ? 'Clear Week' : 'Hét Törlése';
+            
+            // Update copy/paste button text for week view
+            if (copyBtn) {
+                copyBtn.style.display = 'flex'; // Show copy button in week view
+                const copyText = isEnglish ? 'Copy Week' : 'Hét Másolása';
+                copyBtn.innerHTML = `<i data-feather="copy" class="mr-2"></i>${copyText}`;
+            }
+            if (pasteBtn) {
+                const pasteText = isEnglish ? 'Paste Week' : 'Hét Beillesztése';
+                document.getElementById('pasteBtnText').textContent = pasteText;
+                
+                // Enable/disable paste button based on copied week data
+                if (this.copiedWeek) {
+                    pasteBtn.disabled = false;
+                    pasteBtn.classList.remove('opacity-50');
+                } else {
+                    pasteBtn.disabled = true;
+                    pasteBtn.classList.add('opacity-50');
+                }
+            }
+            
+            // Hide paste to selected weeks button in week view
+            const pasteToSelectedBtn = document.getElementById('pasteToSelectedBtn');
+            if (pasteToSelectedBtn) {
+                pasteToSelectedBtn.style.display = 'none';
+            }
+        } else {
+            const monthNames = isEnglish ? 
+                ['January', 'February', 'March', 'April', 'May', 'June',
+                 'July', 'August', 'September', 'October', 'November', 'December'] :
+                ['Január', 'Február', 'Március', 'Április', 'Május', 'Június',
+                 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+            
+            labelElement.textContent = isEnglish ? 'Month View' : 'Havi Nézet';
+            datesElement.textContent = `${monthNames[this.currentMonth.month]} ${this.currentMonth.year}`;
+            clearButtonText.textContent = isEnglish ? 'Clear Month' : 'Hónap Törlése';
+        }
+    }
+
     // New methods for statistics view switching
     switchStatsView(view) {
         this.currentStatsView = view;
@@ -552,6 +701,33 @@ avigation
         }
     }
 
+    // New function to go to current period based on selected view
+    goToCurrentStatsPeriod() {
+        const now = new Date();
+        
+        if (this.currentStatsView === 'week') {
+            // Set to current week
+            const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // Make Monday the first day of the week
+            const day = (startOfWeek.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+            startOfWeek.setDate(startOfWeek.getDate() - day);
+            this.currentStatsPeriod.week = this.formatDate(startOfWeek);
+        } else if (this.currentStatsView === 'month') {
+            // Set to current month
+            this.currentStatsPeriod.month = {
+                year: now.getFullYear(),
+                month: now.getMonth()
+            };
+        } else if (this.currentStatsView === 'year') {
+            // Set to current year
+            this.currentStatsPeriod.year = now.getFullYear();
+        }
+        
+        this.updateStatsPeriodLabels();
+        this.updateStatistics();
+        //this.showNotification('Aktuális időszakra váltva', 'info');
+    }
+
     formatDateDisplay(date) {
         return date.toLocaleDateString('hu-HU', { 
             month: 'short', 
@@ -593,11 +769,48 @@ avigation
             card.draggable = true;
             card.dataset.employeeId = employee.id;
             
-            // Apply custom color if available
+            // Apply custom color with border style for better visibility
+            card.style.backgroundColor = 'transparent';
+            card.style.borderWidth = '1px';
+            card.style.borderStyle = 'solid';
+            
+            // Ensure employee has customColor property (for backward compatibility)
+            if (!employee.hasOwnProperty('customColor')) {
+                employee.customColor = null;
+            }
+            
             if (employee.customColor) {
-                card.style.borderLeft = `4px solid ${employee.customColor}`;
-                const rgb = this.hexToRgb(employee.customColor);
-                card.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`;
+                card.style.borderColor = employee.customColor;
+            } else {
+                // Use default color scheme based on employee.color class
+                switch (employee.color) {
+                    case 'color-1':
+                        card.style.borderColor = '#3b82f6';
+                        break;
+                    case 'color-2':
+                        card.style.borderColor = '#10b981';
+                        break;
+                    case 'color-3':
+                        card.style.borderColor = '#8b5cf6';
+                        break;
+                    case 'color-4':
+                        card.style.borderColor = '#f59e0b';
+                        break;
+                    case 'color-5':
+                        card.style.borderColor = '#ef4444';
+                        break;
+                    case 'color-6':
+                        card.style.borderColor = '#a855f7';
+                        break;
+                    case 'color-7':
+                        card.style.borderColor = '#059669';
+                        break;
+                    case 'color-8':
+                        card.style.borderColor = '#ec4899';
+                        break;
+                    default:
+                        card.style.borderColor = '#3b82f6';
+                }
             }
             
             card.innerHTML = `
@@ -870,6 +1083,19 @@ avigation
         const existingTrashIcons = container.querySelectorAll('.week-trash-container');
         existingTrashIcons.forEach(icon => icon.remove());
         
+        // Remove custom attributes that track event listeners
+        const existingCells = container.querySelectorAll('.month-day');
+        existingCells.forEach(cell => {
+            cell.removeAttribute('data-click-handler-added');
+            cell.removeAttribute('data-hover-handler-added');
+        });
+        
+        // Remove click handler added attribute from trash icons
+        const existingTrashIcons2 = container.querySelectorAll('.week-trash-icon');
+        existingTrashIcons2.forEach(icon => {
+            icon.removeAttribute('data-click-handler-added');
+        });
+        
         const year = this.currentMonth.year;
         const month = this.currentMonth.month;
         
@@ -907,6 +1133,7 @@ avigation
         // Track weeks for click handling
         let currentWeekStart = null;
         let weekCells = [];
+        let weekCount = 0;
         
         // Generate calendar days
         for (let i = 0; i < daysToShow; i++) {
@@ -915,10 +1142,11 @@ avigation
             // Check if we're starting a new week (Monday)
             const isMonday = date.getDay() === 1; // 1 = Monday in JavaScript
             if (isMonday || i === 0) {
-                // If we have a previous week, add click handler and trash icon to its cells
+                // Handle the previous week if it exists
                 if (weekCells.length > 0 && currentWeekStart) {
                     this.addWeekClickHandler(weekCells, currentWeekStart);
                     this.addWeekTrashIcon(weekCells, currentWeekStart);
+                    weekCount++;
                 }
                 
                 // Start new week
@@ -971,9 +1199,97 @@ avigation
         if (weekCells.length > 0 && currentWeekStart) {
             this.addWeekClickHandler(weekCells, currentWeekStart);
             this.addWeekTrashIcon(weekCells, currentWeekStart);
+            weekCount++;
         }
         
         // Initialize feather icons for trash icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    renderEmployeeList() {
+        const container = document.getElementById('employeeList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const activeEmployees = this.employees.filter(emp => emp.isActive);
+        
+        activeEmployees.forEach(employee => {
+            const card = document.createElement('div');
+            card.className = `employee-card-with-pic custom-styled-employee-card cursor-move`;
+            card.draggable = true;
+            card.dataset.employeeId = employee.id;
+            
+            // Apply custom color with border style for better visibility
+            card.style.backgroundColor = 'transparent';
+            card.style.borderWidth = '1px';
+            card.style.borderStyle = 'solid';
+            card.style.color = this.isDarkMode ? '#ffffff' : '#000000';
+            
+            // Ensure employee has customColor property (for backward compatibility)
+            if (!employee.hasOwnProperty('customColor')) {
+                employee.customColor = null;
+            }
+            
+            if (employee.customColor) {
+                card.style.borderColor = employee.customColor;
+            } else {
+                // Use default color scheme based on employee.color class
+                switch (employee.color) {
+                    case 'color-1':
+                        card.style.borderColor = '#3b82f6';
+                        break;
+                    case 'color-2':
+                        card.style.borderColor = '#10b981';
+                        break;
+                    case 'color-3':
+                        card.style.borderColor = '#8b5cf6';
+                        break;
+                    case 'color-4':
+                        card.style.borderColor = '#f59e0b';
+                        break;
+                    case 'color-5':
+                        card.style.borderColor = '#ef4444';
+                        break;
+                    case 'color-6':
+                        card.style.borderColor = '#a855f7';
+                        break;
+                    case 'color-7':
+                        card.style.borderColor = '#059669';
+                        break;
+                    case 'color-8':
+                        card.style.borderColor = '#ec4899';
+                        break;
+                    default:
+                        card.style.borderColor = '#3b82f6';
+                }
+            }
+            
+            card.innerHTML = `
+                <div class="employee-info">
+                    <div class="employee-name">${this.getEmployeeDisplayName(employee)}</div>
+                    <div class="employee-position">${employee.position}</div>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+        
+        // Make employee list sortable
+        if (typeof Sortable !== 'undefined') {
+            new Sortable(container, {
+                group: {
+                    name: 'employees',
+                    pull: 'clone',
+                    put: false
+                },
+                sort: false,
+                animation: 150
+            });
+        }
+        
         if (typeof feather !== 'undefined') {
             feather.replace();
         }
@@ -1035,6 +1351,7 @@ avigation
                     timeDisplay = 'Szabadság';
                     break;
                 case 'sick':
+
                     timeDisplay = 'Betegszabadság';
                     break;
                 case 'holiday':
@@ -1055,10 +1372,44 @@ avigation
                 </div>
             `;
             // Apply employee-assigned color for compact (month) cards
-            if (employee.customColor && shift.type === 'regular') {
-                const rgb = this.hexToRgb(employee.customColor);
-                card.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`;
-                card.style.border = `1px solid rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            // Use border instead of background for better visibility
+            card.style.backgroundColor = 'transparent';
+            card.style.borderWidth = '1px';
+            card.style.borderStyle = 'solid';
+            
+            // Set border color based on employee's custom color or default color
+            if (employee.customColor) {
+                card.style.borderColor = employee.customColor;
+            } else {
+                // Use default color scheme based on employee.color class
+                switch (employee.color) {
+                    case 'color-1':
+                        card.style.borderColor = '#3b82f6';
+                        break;
+                    case 'color-2':
+                        card.style.borderColor = '#10b981';
+                        break;
+                    case 'color-3':
+                        card.style.borderColor = '#8b5cf6';
+                        break;
+                    case 'color-4':
+                        card.style.borderColor = '#f59e0b';
+                        break;
+                    case 'color-5':
+                        card.style.borderColor = '#ef4444';
+                        break;
+                    case 'color-6':
+                        card.style.borderColor = '#a855f7';
+                        break;
+                    case 'color-7':
+                        card.style.borderColor = '#059669';
+                        break;
+                    case 'color-8':
+                        card.style.borderColor = '#ec4899';
+                        break;
+                    default:
+                        card.style.borderColor = '#3b82f6';
+                }
             }
         } else {
             card.innerHTML = `
@@ -1369,6 +1720,13 @@ avigation
             employeeSelect.appendChild(option);
         });
         
+        // Store original shift type for comparison
+        if (shift) {
+            modal.dataset.originalType = shift.type;
+        } else {
+            modal.dataset.originalType = '';
+        }
+        
         if (shift) {
             // Edit mode
             document.getElementById('shiftEmployee').value = String(shift.employeeId);
@@ -1395,6 +1753,9 @@ avigation
     closeShiftModal() {
         document.getElementById('shiftModal').classList.remove('active');
         this.editingShift = null;
+        // Clean up dataset
+        const modal = document.getElementById('shiftModal');
+        delete modal.dataset.originalType;
     }
 
     saveShift() {
@@ -1425,6 +1786,33 @@ avigation
             notes
         };
         
+        // Check vacation/sick days before saving if it's a leave type and type has changed
+        if ((type === 'vacation' || type === 'sick') && 
+            (!this.editingShift || this.editingShift.type !== type)) {
+            const alertResult = this.checkLeaveDaysAlert(employeeId, type);
+            if (alertResult.shouldAlert) {
+                // Show confirmation dialog before proceeding
+                this.showConfirmation(
+                    alertResult.title,
+                    alertResult.message,
+                    () => {
+                        // User confirmed, proceed with saving
+                        if (this.editingShift) {
+                            // Update existing shift
+                            this.removeShift(this.editingShift.id);
+                        }
+                        
+                        this.addShift(shift);
+                        this.closeShiftModal();
+                        this.renderSchedule();
+                    },
+                    'Mentés',
+                    'bg-blue-600 hover:bg-blue-700'
+                );
+                return; // Don't proceed with saving yet
+            }
+        }
+        
         if (this.editingShift) {
             // Update existing shift
             this.removeShift(this.editingShift.id);
@@ -1433,6 +1821,68 @@ avigation
         this.addShift(shift);
         this.closeShiftModal();
         this.renderSchedule();
+    }
+
+    // New method to check if employee is running low on leave days
+    checkLeaveDaysAlert(employeeId, leaveType) {
+        const employee = this.employees.find(emp => String(emp.id) === String(employeeId));
+        if (!employee) return { shouldAlert: false };
+        
+        // Calculate current leave days used
+        let usedDays = 0;
+        const maxDays = leaveType === 'vacation' ? employee.vacationDaysPerYear : employee.sickDaysPerYear;
+        
+        // Count used days from all schedules
+        Object.keys(this.schedules).forEach(weekKey => {
+            if (this.schedules[weekKey]) {
+                Object.keys(this.schedules[weekKey]).forEach(date => {
+                    if (this.schedules[weekKey][date]) {
+                        this.schedules[weekKey][date].forEach(shift => {
+                            if (String(shift.employeeId) === String(employeeId) && shift.type === leaveType) {
+                                usedDays++;
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        
+        // If we're editing and the original shift was of the same type, don't count it twice
+        if (this.editingShift && this.editingShift.type === leaveType) {
+            // We're modifying an existing leave shift, so don't increment the count
+        } else {
+            // We're adding a new leave shift or changing type, so increment the count
+            usedDays++;
+        }
+        
+        const remainingDays = maxDays - usedDays;
+        
+        // Check if we should show an alert
+        if (remainingDays < 0) {
+            // No days left
+            return {
+                shouldAlert: true,
+                title: leaveType === 'vacation' ? 'Szabadság elfogyott' : 'Betegszabadság elfogyott',
+                message: `${this.getEmployeeDisplayName(employee)} nem rendelkezik több ${leaveType === 'vacation' ? 'szabadsággal' : 'betegszabadsággal'}. Biztosan hozzá szeretnéd adni ezt a műszakot?`
+            };
+        } else if (remainingDays <= 0) {
+            // No days left
+            return {
+                shouldAlert: true,
+                title: leaveType === 'vacation' ? 'Szabadság el fog fogyni' : 'Betegszabadság elfogyott',
+                message: `${this.getEmployeeDisplayName(employee)} ez a művelet után nem fog rendelkezni több ${leaveType === 'vacation' ? 'szabadsággal' : 'betegszabadsággal'}. Biztosan hozzá szeretnéd adni ezt a műszakot?`
+            };
+        } else if (remainingDays <= 2) {
+            // Low on days (2 or fewer remaining)
+            return {
+                shouldAlert: true,
+                title: leaveType === 'vacation' ? 'Kevés szabadság maradt' : 'Kevés betegszabadság maradt',
+                message: `${this.getEmployeeDisplayName(employee)} ez a művelet után csak ${remainingDays} ${leaveType === 'vacation' ? 'szabadsággal' : 'betegszabadsággal'} fog rendelkezni. Biztosan hozzá szeretnéd adni ezt a műszakot?`
+            };
+        }
+        
+        // No alert needed
+        return { shouldAlert: false };
     }
 
     deleteShift() {
@@ -1685,41 +2135,42 @@ avigation
     addWeekClickHandler(weekCells, weekStartDate) {
         // Add click handler to each cell in the week
         weekCells.forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                // Only handle clicks in month view when we have copied week data
-                if (this.currentView === 'month' && this.copiedWeek) {
-                    e.stopPropagation();
-                    
-                    // Toggle selection for this week
-                    const isSelected = weekCells.some(c => c.classList.contains('selected-week'));
-                    if (isSelected) {
-                        // If already selected, deselect
-                        weekCells.forEach(c => c.classList.remove('selected-week'));
-                        // Remove from selected weeks array
-                        if (this.selectedWeeks) {
-                            const weekStartStr = this.formatDate(weekStartDate);
-                            this.selectedWeeks = this.selectedWeeks.filter(w => w !== weekStartStr);
-                        }
-                    } else {
-                        // Select this week
-                        weekCells.forEach(c => c.classList.add('selected-week'));
-                        // Add to selected weeks array
-                        if (!this.selectedWeeks) {
-                            this.selectedWeeks = [];
-                        }
-                        const weekStartStr = this.formatDate(weekStartDate);
-                        if (!this.selectedWeeks.includes(weekStartStr)) {
-                            this.selectedWeeks.push(weekStartStr);
-                        }
+            // Check if event listener has already been added
+            if (!cell.hasAttribute('data-click-handler-added')) {
+                cell.setAttribute('data-click-handler-added', 'true');
+                
+                cell.addEventListener('click', (e) => {
+                    // Handle clicks in month view
+                    if (this.currentView === 'month') {
+                        e.stopPropagation();
                         
-                        // Show notification about multiple selection
-                        this.showNotification('Több hét kiválasztása: Kattints a "Beillesztés kiválasztott hetekre" gombra', 'info', null, 3000);
+                        // If we have copied week data, paste it to this week
+                        if (this.copiedWeek) {
+                            const weekStartStr = this.formatDate(weekStartDate);
+                            this.pasteWeekToMonthView(weekStartStr);
+                        } else {
+                            // If no copied week data, copy this week
+                            const weekStartStr = this.formatDate(weekStartDate);
+                            this.copyWeekFromMonthView(weekStartStr);
+                            // Highlight the selected week more obviously
+                            this.highlightSelectedWeek(weekCells);
+                        }
                     }
-                    
-                    // Update the paste to selected weeks button
-                    this.updatePasteToSelectedButton();
-                }
-            });
+                });
+            }
+        });
+    }
+
+    // New function to highlight the selected week more obviously
+    highlightSelectedWeek(weekCells) {
+        // Remove any existing highlighted weeks
+        document.querySelectorAll('.month-day.highlighted-week').forEach(cell => {
+            cell.classList.remove('highlighted-week');
+        });
+        
+        // Add highlight class to the selected week
+        weekCells.forEach(cell => {
+            cell.classList.add('highlighted-week');
         });
     }
     
@@ -1764,44 +2215,250 @@ avigation
         
         // Add hover events to show/hide trash icon
         weekCells.forEach(cell => {
-            cell.addEventListener('mouseenter', () => {
-                trashContainer.style.opacity = '1';
-            });
-            
-            cell.addEventListener('mouseleave', () => {
-                trashContainer.style.opacity = '0';
-            });
+            // Check if event listener has already been added
+            if (!cell.hasAttribute('data-hover-handler-added')) {
+                cell.setAttribute('data-hover-handler-added', 'true');
+                
+                cell.addEventListener('mouseenter', () => {
+                    trashContainer.style.opacity = '1';
+                });
+                
+                cell.addEventListener('mouseleave', () => {
+                    trashContainer.style.opacity = '0';
+                });
+            }
         });
         
         // Add click event to trash icon
-        trashIcon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const weekStartStr = this.formatDate(weekStartDate);
+        if (!trashIcon.hasAttribute('data-click-handler-added')) {
+            trashIcon.setAttribute('data-click-handler-added', 'true');
             
-            // Show confirmation dialog
-            const weekEnd = new Date(weekStartDate);
-            weekEnd.setDate(weekEnd.getDate() + 6);
-            
-            this.showConfirmation(
-                'Hét Törlése',
-                `Biztosan törölni szeretnéd a műszakbeosztást a következő időszakra: ${this.formatDateDisplay(weekStartDate)} - ${this.formatDateDisplay(weekEnd)}?`,
-                () => {
-                    // Clear the week
-                    this.clearWeekSchedule(weekStartStr);
-                    this.showNotification('Hét sikeresen törölve!', 'success');
-                },
-                'Törlés',
-                'bg-red-600 hover:bg-red-700'
-            );
-        });
+            trashIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const weekStartStr = this.formatDate(weekStartDate);
+                
+                // Show confirmation dialog
+                const weekEnd = new Date(weekStartDate);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                this.showConfirmation(
+                    'Hét Törlése',
+                    `Biztosan törölni szeretnéd a műszakbeosztást a következő időszakra: ${this.formatDateDisplay(weekStartDate)} - ${this.formatDateDisplay(weekEnd)}?`,
+                    () => {
+                        // Clear the week
+                        this.clearWeekSchedule(weekStartStr);
+                        this.showNotification('Hét sikeresen törölve!', 'success');
+                    },
+                    'Törlés',
+                    'bg-red-600 hover:bg-red-700'
+                );
+            });
+        }
     }
 
     // Copy/Paste Functionality
     copyWeek() {
         if (this.currentView === 'week') {
             this.copyCurrentWeek();
+        } else if (this.currentView === 'month') {
+            // In month view, guide the user to select a week first
+            // Clear any existing copied week data to allow copying a new week
+            this.copiedWeek = null;
+            
+            // Remove any existing highlighted weeks
+            document.querySelectorAll('.month-day.highlighted-week').forEach(cell => {
+                cell.classList.remove('highlighted-week');
+            });
+            
+            this.showNotification('Kérjük, kattints egy hétre a másoláshoz', 'info');
+            // Add visual indicator to show which weeks can be clicked
+            this.highlightWeeksForCopying();
         }
-        // In month view, we don't copy the entire month anymore
+    }
+
+    // New function to highlight weeks that can be selected for copying
+    highlightWeeksForCopying() {
+        // Add a temporary class to all weeks in the month view to indicate they can be selected
+        const weekCells = document.querySelectorAll('.month-day');
+        weekCells.forEach(cell => {
+            cell.classList.add('selectable-week');
+        });
+        
+        // Remove the highlighting after 5 seconds
+        setTimeout(() => {
+            weekCells.forEach(cell => {
+                cell.classList.remove('selectable-week');
+            });
+        }, 5000);
+    }
+
+    // New function to copy a week from a specific date in month view
+    copyWeekFromMonthView(dateStr) {
+        // Get the week key for the specified date
+        const date = new Date(dateStr + 'T00:00:00');
+        const weekKey = this.getWeekKey(date);
+        
+        // Check if there are shifts for this week
+        if (this.schedules[weekKey] && Object.keys(this.schedules[weekKey]).length > 0) {
+            this.copiedWeek = JSON.parse(JSON.stringify(this.schedules[weekKey]));
+            document.getElementById('pasteBtn').disabled = false;
+            document.getElementById('pasteBtn').classList.remove('opacity-50');
+            this.showNotification('Hét sikeresen másolva! Most kattints egy másik hétre a beillesztéshez.', 'success');
+            
+            // Highlight weeks that can be pasted to
+            this.highlightWeeksForPasting();
+        } else {
+            this.showNotification('Nincs másolható műszakbeosztás erre a hétre.', 'warning');
+        }
+    }
+
+    // New function to paste a week to a specific date in month view
+    pasteWeekToMonthView(dateStr) {
+        if (!this.copiedWeek) {
+            this.showNotification('Nincs másolt hét a beillesztéshez.', 'warning');
+            return;
+        }
+        
+        // Get the week key for the specified date
+        const date = new Date(dateStr + 'T00:00:00');
+        const weekKey = this.getWeekKey(date);
+        const weekDates = this.getWeekDates(dateStr);
+        
+        console.log('Pasting to week:', weekKey);
+        console.log('Current schedules:', this.schedules);
+        console.log('Target week schedules:', this.schedules[weekKey]);
+        
+        // Check if target week already has schedules
+        const targetWeekHasSchedules = this.schedules[weekKey] && Object.keys(this.schedules[weekKey]).length > 0;
+        
+        console.log('Target week has schedules:', targetWeekHasSchedules);
+        console.log('Number of scheduled days:', this.schedules[weekKey] ? Object.keys(this.schedules[weekKey]).length : 0);
+        
+        // Additional check - see if any day in the week has shifts
+        let hasShifts = false;
+        if (this.schedules[weekKey]) {
+            for (const date in this.schedules[weekKey]) {
+                if (this.schedules[weekKey][date] && this.schedules[weekKey][date].length > 0) {
+                    hasShifts = true;
+                    console.log('Found shifts on date:', date, 'Shifts:', this.schedules[weekKey][date]);
+                    break;
+                }
+            }
+        }
+        console.log('Week has shifts:', hasShifts);
+        
+        if (targetWeekHasSchedules && hasShifts) {
+            console.log('Showing confirmation dialog');
+            // Show confirmation dialog
+            this.showConfirmation(
+                'Műszakbeosztás Felülírása vagy Összefűzése',
+                'Ez a hét már tartalmaz műszakbeosztást. Szeretnéd felülírni a meglévő beosztást, vagy összefűzni az új beosztással?',
+                () => {
+                    // Replace option
+                    this.performWeekPaste(weekKey, weekDates, 'replace');
+                },
+                'Felülírás',
+                'bg-red-600 hover:bg-red-700',
+                () => {
+                    // Merge option
+                    this.performWeekPaste(weekKey, weekDates, 'merge');
+                },
+                'Összefűzés',
+                'bg-blue-600 hover:bg-blue-700'
+            );
+        } else {
+            console.log('No existing schedules, just pasting');
+            // No existing schedules, just paste
+            this.performWeekPaste(weekKey, weekDates, 'replace');
+        }
+    }
+
+    // New function to perform the actual week paste operation
+    performWeekPaste(weekKey, weekDates, mode) {
+        if (mode === 'replace') {
+            // Clear target week
+            this.schedules[weekKey] = {};
+        } else if (mode === 'merge') {
+            // Keep existing schedules, we'll merge with them
+            if (!this.schedules[weekKey]) {
+                this.schedules[weekKey] = {};
+            }
+        }
+        
+        // Paste copied shifts with new dates
+        Object.keys(this.copiedWeek).forEach((originalDate, index) => {
+            if (index < weekDates.length) {
+                const newDate = weekDates[index];
+                
+                // Initialize array for this date if it doesn't exist
+                if (!this.schedules[weekKey][newDate]) {
+                    this.schedules[weekKey][newDate] = [];
+                }
+                
+                // Add copied shifts
+                const copiedShifts = this.copiedWeek[originalDate].map(shift => ({
+                    ...shift,
+                    id: this.generateId(),
+                    date: newDate
+                }));
+                
+                if (mode === 'merge') {
+                    // For merge mode, only add shifts that don't already exist
+                    copiedShifts.forEach(newShift => {
+                        // Check if a similar shift already exists (same employee and time slot)
+                        const isDuplicate = this.schedules[weekKey][newDate].some(existingShift => 
+                            String(existingShift.employeeId) === String(newShift.employeeId) &&
+                            existingShift.startTime === newShift.startTime &&
+                            existingShift.endTime === newShift.endTime &&
+                            existingShift.type === newShift.type
+                        );
+                        
+                        // Only add if not a duplicate
+                        if (!isDuplicate) {
+                            this.schedules[weekKey][newDate].push(newShift);
+                        }
+                    });
+                } else {
+                    // For replace mode, simply concatenate
+                    this.schedules[weekKey][newDate] = this.schedules[weekKey][newDate].concat(copiedShifts);
+                }
+            }
+        });
+        
+        this.saveData();
+        this.renderSchedule();
+        
+        if (mode === 'replace') {
+            this.showNotification('Hét sikeresen lecserélve!', 'success');
+        } else {
+            this.showNotification('Hét sikeresen összefűzve!', 'success');
+        }
+    }
+
+    // New function to generate a unique ID for shifts
+    generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // New function to highlight weeks that can be pasted to
+    highlightWeeksForPasting() {
+        // Remove the highlighted week after pasting
+        document.querySelectorAll('.month-day.highlighted-week').forEach(cell => {
+            cell.classList.remove('highlighted-week');
+        });
+        
+        // Add a temporary class to all weeks in the month view to indicate they can be pasted to
+        const weekCells = document.querySelectorAll('.month-day');
+        weekCells.forEach(cell => {
+            cell.classList.add('pasteable-week');
+        });
+        
+        // Remove the highlighting after 5 seconds
+        setTimeout(() => {
+            weekCells.forEach(cell => {
+                cell.classList.remove('pasteable-week');
+            });
+        }, 5000);
     }
 
     pasteWeek() {
@@ -2260,6 +2917,19 @@ avigation
             }
         }
         
+        // Update total hours card label based on current view
+        const totalHoursLabel = document.querySelector('#totalHours').previousElementSibling;
+        if (totalHoursLabel) {
+            const isEnglish = document.documentElement.lang === 'en' || document.title.includes('Employee Schedule');
+            if (this.currentStatsView === 'week') {
+                totalHoursLabel.textContent = isEnglish ? 'Total Hours This Week' : 'Összes óra ezen a héten';
+            } else if (this.currentStatsView === 'month') {
+                totalHoursLabel.textContent = isEnglish ? 'Total Hours This Month' : 'Összes óra ebben a hónapban';
+            } else if (this.currentStatsView === 'year') {
+                totalHoursLabel.textContent = isEnglish ? 'Total Hours This Year' : 'Összes óra ebben az évben';
+            }
+        }
+        
         // Render the chart with the appropriate data
         this.renderWeeklyChart(stats.weeklyStats);
     }
@@ -2287,6 +2957,8 @@ avigation
                 weekHours: 0,
                 monthHours: 0,
                 overtimeHours: 0,
+                vacationDays: 0,
+                sickDays: 0,
                 attendanceRate: 100,
                 totalShifts: 0,
                 scheduledShifts: 0
@@ -2347,28 +3019,8 @@ avigation
         const weekKey = this.currentStatsPeriod.week;
         const weekSchedule = this.schedules[weekKey] || {};
         
-        // Calculate month hours for all employees
-        const currentMonth = this.currentMonth;
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                const date = new Date(dateStr);
-                if (date.getFullYear() === currentMonth.year && date.getMonth() === currentMonth.month) {
-                    weekSchedule[dateStr].forEach(shift => {
-                        const duration = this.calculateShiftDuration(shift.startTime, shift.endTime);
-                        if (employeeStats[shift.employeeId] && shift.type === 'regular') {
-                            employeeStats[shift.employeeId].monthHours += duration;
-                        }
-                        // Count sick and vacation days for the month
-                        if (shift.type === 'vacation') {
-                            vacationDays++;
-                        } else if (shift.type === 'sick') {
-                            sickDays++;
-                        }
-                    });
-                }
-            });
-        });
+        // For weekly view, we only calculate data for the current week
+        // Month hours will be calculated separately in the monthly view
         
         // Calculate from current week
         const weekDates = this.getWeekDates(this.currentStatsPeriod.week);
@@ -2384,8 +3036,16 @@ avigation
                 
                 if (shift.type === 'vacation') {
                     vacationDays++;
+                    // Track vacation days per employee
+                    if (employeeStats[shift.employeeId]) {
+                        employeeStats[shift.employeeId].vacationDays = (employeeStats[shift.employeeId].vacationDays || 0) + 1;
+                    }
                 } else if (shift.type === 'sick') {
                     sickDays++;
+                    // Track sick days per employee
+                    if (employeeStats[shift.employeeId]) {
+                        employeeStats[shift.employeeId].sickDays = (employeeStats[shift.employeeId].sickDays || 0) + 1;
+                    }
                 } else if (shift.type === 'regular') {
                     totalHours += duration;
                     
@@ -2404,13 +3064,13 @@ avigation
                         employeeStats[shift.employeeId].weekHours += duration;
                         employeeStats[shift.employeeId].scheduledShifts++;
                     }
-                    
-                    if (employeeStats[shift.employeeId].weekHours > 40) {
-                        employeeStats[shift.employeeId].overtimeHours = 
-                            employeeStats[shift.employeeId].weekHours - 40;
-                    }
                 }
             });
+        });
+        
+        // Calculate overtime hours for each employee (hours worked over 40 in the week)
+        Object.values(employeeStats).forEach(stat => {
+            stat.overtimeHours = Math.max(0, stat.weekHours - 40);
         });
         
         return { totalHours, vacationDays, sickDays };
@@ -2443,8 +3103,16 @@ avigation
                         
                         if (shift.type === 'vacation') {
                             vacationDays++;
+                            // Track vacation days per employee
+                            if (employeeStats[shift.employeeId]) {
+                                employeeStats[shift.employeeId].vacationDays = (employeeStats[shift.employeeId].vacationDays || 0) + 1;
+                            }
                         } else if (shift.type === 'sick') {
                             sickDays++;
+                            // Track sick days per employee
+                            if (employeeStats[shift.employeeId]) {
+                                employeeStats[shift.employeeId].sickDays = (employeeStats[shift.employeeId].sickDays || 0) + 1;
+                            }
                         } else if (shift.type === 'regular') {
                             totalHours += duration;
                             
@@ -2464,6 +3132,10 @@ avigation
                             if (shift.type === 'regular') {
                                 employeeStats[shift.employeeId].monthHours += duration;
                                 employeeStats[shift.employeeId].scheduledShifts++;
+                                // For monthly view, calculate overtime based on week hours
+                                // We need to calculate weekly overtime and sum it up
+                                // For now, we'll set it to 0 as we don't have weekly breakdown in monthly view
+                                employeeStats[shift.employeeId].overtimeHours = 0;
                             }
                         }
                     });
@@ -2505,8 +3177,16 @@ avigation
                         
                         if (shift.type === 'vacation') {
                             vacationDays++;
+                            // Track vacation days per employee
+                            if (employeeStats[shift.employeeId]) {
+                                employeeStats[shift.employeeId].vacationDays = (employeeStats[shift.employeeId].vacationDays || 0) + 1;
+                            }
                         } else if (shift.type === 'sick') {
                             sickDays++;
+                            // Track sick days per employee
+                            if (employeeStats[shift.employeeId]) {
+                                employeeStats[shift.employeeId].sickDays = (employeeStats[shift.employeeId].sickDays || 0) + 1;
+                            }
                         } else if (shift.type === 'regular') {
                             totalHours += duration;
                             
@@ -2527,6 +3207,8 @@ avigation
                                 employeeStats[shift.employeeId].scheduledShifts++;
                                 // For yearly view, we accumulate all hours in monthHours
                                 employeeStats[shift.employeeId].monthHours += duration;
+                                // For yearly view, we don't calculate overtime as it's based on weekly limits
+                                employeeStats[shift.employeeId].overtimeHours = 0;
                             }
                         }
                     });
@@ -2554,8 +3236,9 @@ avigation
         
         tbody.innerHTML = '';
         
-        // Calculate sick and vacation days for each employee
+        // Prepare leave stats for each employee using pre-calculated values
         const employeeLeaveStats = {};
+        
         this.employees.forEach(emp => {
             employeeLeaveStats[emp.id] = {
                 sickDaysTaken: 0,
@@ -2565,18 +3248,14 @@ avigation
             };
         });
         
-        // Count sick and vacation days from schedules
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                weekSchedule[dateStr].forEach(shift => {
-                    if (shift.type === 'sick' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].sickDaysTaken++;
-                    } else if (shift.type === 'vacation' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].vacationDaysTaken++;
-                    }
-                });
-            });
+        // Use pre-calculated leave days from the statistics calculation
+        employeeStats.forEach(stat => {
+            if (stat.sickDays) {
+                employeeLeaveStats[stat.employee.id].sickDaysTaken = stat.sickDays;
+            }
+            if (stat.vacationDays) {
+                employeeLeaveStats[stat.employee.id].vacationDaysTaken = stat.vacationDays;
+            }
         });
         
         employeeStats.forEach(stat => {
@@ -2585,17 +3264,22 @@ avigation
             // Determine which hours to show based on current view
             let hoursDisplay = '0 ó';
             let regularHours = 0;
-            let overtimeHours = stat.overtimeHours;
+            let overtimeHours = 0;
             
             if (this.currentStatsView === 'week') {
                 hoursDisplay = stat.weekHours + ' ó';
+                overtimeHours = stat.overtimeHours;
                 regularHours = Math.max(0, stat.weekHours - overtimeHours);
             } else if (this.currentStatsView === 'month') {
                 hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
+                // For monthly view, we don't calculate overtime in the same way
+                // Overtime is calculated per week, not per month
+                regularHours = stat.monthHours;
             } else if (this.currentStatsView === 'year') {
                 hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
+                // For yearly view, we don't calculate overtime in the same way
+                // Overtime is calculated per week, not per year
+                regularHours = stat.monthHours;
             }
             
             // Calculate pay based on regular hours and overtime
@@ -2616,9 +3300,9 @@ avigation
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${hoursDisplay}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.overtimeHours} ó</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.sickDaysTaken}/${leaveStats.maxSickDays}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.vacationDaysTaken}/${leaveStats.maxVacationDays}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${overtimeHours} ó</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.sickDaysTaken || 0}/${leaveStats.maxSickDays}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.vacationDaysTaken || 0}/${leaveStats.maxVacationDays}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.attendanceRate}%</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${this.formatCurrency(totalPay)}</td>
             `;
@@ -2640,8 +3324,9 @@ avigation
         // Add header row
         exportData.push(['Alkalmazott neve', 'Aktuális időszak órái', 'Túlórák', 'Betegszabadságok', 'Szabadságok', 'Jelenléti Arány', 'Fizetés']);
         
-        // Calculate leave stats (same logic as in renderPerformanceTable)
+        // Prepare leave stats for each employee using pre-calculated values
         const employeeLeaveStats = {};
+        
         this.employees.forEach(emp => {
             employeeLeaveStats[emp.id] = {
                 sickDaysTaken: 0,
@@ -2651,18 +3336,14 @@ avigation
             };
         });
         
-        // Count sick and vacation days from schedules
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                weekSchedule[dateStr].forEach(shift => {
-                    if (shift.type === 'sick' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].sickDaysTaken++;
-                    } else if (shift.type === 'vacation' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].vacationDaysTaken++;
-                    }
-                });
-            });
+        // Use pre-calculated leave days from the statistics calculation
+        stats.employeeStats.forEach(stat => {
+            if (stat.sickDays) {
+                employeeLeaveStats[stat.employee.id].sickDaysTaken = stat.sickDays;
+            }
+            if (stat.vacationDays) {
+                employeeLeaveStats[stat.employee.id].vacationDaysTaken = stat.vacationDays;
+            }
         });
         
         // Add data rows
@@ -2672,17 +3353,22 @@ avigation
             // Determine which hours to show based on current view
             let hoursDisplay = '0 ó';
             let regularHours = 0;
-            let overtimeHours = stat.overtimeHours;
+            let overtimeHours = 0;
             
             if (this.currentStatsView === 'week') {
                 hoursDisplay = stat.weekHours + ' ó';
+                overtimeHours = stat.overtimeHours;
                 regularHours = Math.max(0, stat.weekHours - overtimeHours);
             } else if (this.currentStatsView === 'month') {
                 hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
+                // For monthly view, we don't calculate overtime in the same way
+                // Overtime is calculated per week, not per month
+                regularHours = stat.monthHours;
             } else if (this.currentStatsView === 'year') {
                 hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
+                // For yearly view, we don't calculate overtime in the same way
+                // Overtime is calculated per week, not per year
+                regularHours = stat.monthHours;
             }
             
             // Calculate pay based on regular hours and overtime
@@ -2694,7 +3380,7 @@ avigation
             const rowData = [
                 this.getEmployeeDisplayName(stat.employee),
                 hoursDisplay,
-                stat.overtimeHours + ' ó',
+                overtimeHours + ' ó',
                 leaveStats.sickDaysTaken + '/' + leaveStats.maxSickDays,
                 leaveStats.vacationDaysTaken + '/' + leaveStats.maxVacationDays,
                 stat.attendanceRate + '%',
@@ -3362,19 +4048,43 @@ avigation
     }
 
     // Confirmation System
-    showConfirmation(title, message, callback, confirmText = 'Megerősítés', confirmClass = 'bg-red-600 hover:bg-red-700') {
+    showConfirmation(title, message, callback, confirmText = 'Megerősítés', confirmClass = 'bg-red-600 hover:bg-red-700', secondCallback = null, secondText = null, secondClass = null) {
+        console.log('Showing confirmation dialog:', {title, message, confirmText, secondText});
+        
         const modal = document.getElementById('confirmationModal');
         const titleElement = document.getElementById('confirmationTitle');
         const messageElement = document.getElementById('confirmationMessage');
         const confirmButton = document.getElementById('confirmButton');
+        const cancelButton = document.getElementById('cancelButton');
+        const secondButtonContainer = document.getElementById('secondButtonContainer');
+        const secondButton = document.getElementById('secondButton');
+        
+        if (!modal) {
+            console.error('Confirmation modal not found in DOM');
+            return;
+        }
         
         titleElement.textContent = title;
         messageElement.textContent = message;
         confirmButton.textContent = confirmText;
         confirmButton.className = `px-4 py-2 text-white rounded-md ${confirmClass}`;
         
+        // Handle second button
+        if (secondCallback && secondText && secondClass) {
+            console.log('Setting up second button');
+            secondButton.textContent = secondText;
+            secondButton.className = `px-4 py-2 text-white rounded-md ${secondClass}`;
+            secondButton.style.display = 'block';
+            this.secondConfirmationCallback = secondCallback;
+        } else {
+            console.log('Hiding second button');
+            secondButton.style.display = 'none';
+            this.secondConfirmationCallback = null;
+        }
+        
         this.confirmationCallback = callback;
         modal.classList.add('active');
+        console.log('Modal should be visible now');
         
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -3389,8 +4099,17 @@ avigation
         this.closeConfirmationModal();
     }
 
+    secondConfirmAction() {
+        if (this.secondConfirmationCallback) {
+            this.secondConfirmationCallback();
+            this.secondConfirmationCallback = null;
+        }
+        this.closeConfirmationModal();
+    }
+
     cancelConfirmation() {
         this.confirmationCallback = null;
+        this.secondConfirmationCallback = null;
         this.closeConfirmationModal();
         
         // Restore the original cancelConfirmation function if it was overridden
@@ -3701,6 +4420,11 @@ function navigateTime(direction) {
     scheduleManager.navigateTime(direction);
 }
 
+// New global function for going to current period
+function goToCurrentPeriod() {
+    scheduleManager.goToCurrentPeriod();
+}
+
 function saveSchedule() {
     scheduleManager.saveSchedule();
 }
@@ -3754,6 +4478,10 @@ function confirmAction() {
     scheduleManager.confirmAction();
 }
 
+function secondConfirmAction() {
+    scheduleManager.secondConfirmAction();
+}
+
 function cancelConfirmation() {
     scheduleManager.cancelConfirmation();
 }
@@ -3802,6 +4530,11 @@ function switchStatsView(view) {
 
 function navigateStatsPeriod(direction) {
     scheduleManager.navigateStatsPeriod(direction);
+}
+
+// New global function for going to current stats period
+function goToCurrentStatsPeriod() {
+    scheduleManager.goToCurrentStatsPeriod();
 }
 
 // Initialize the application

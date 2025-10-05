@@ -139,6 +139,11 @@
                                 class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
                                 <i data-feather="chevron-right" class="w-4 h-4"></i>
                             </button>
+                            <button onclick="goToCurrentPeriod()" 
+                                class="p-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                                title="Ugrás az aktuális időszakra">
+                                <i data-feather="target" class="w-4 h-4"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -337,6 +342,12 @@
                                 <i data-feather="chevron-right" class="w-4 h-4"></i>
                             </button>
                         </div>
+                        <button onclick="goToCurrentStatsPeriod()" 
+                            class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center"
+                            title="Ugrás az aktuális időszakra">
+                            <i data-feather="target" class="w-4 h-4 mr-1"></i>
+                            Aktuális
+                        </button>
                     </div>
                 </div>
             </div>
@@ -750,10 +761,16 @@
             </div>
             <p class="text-gray-600 mb-6" id="confirmationMessage">Biztos vagy benne, hogy folytatni akarod?</p>
             <div class="flex justify-end space-x-3">
-                <button onclick="cancelConfirmation()"
+                <button onclick="cancelConfirmation()" id="cancelButton"
                     class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                     Mégse
                 </button>
+                <span id="secondButtonContainer">
+                    <button onclick="secondConfirmAction()" id="secondButton"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" style="display: none;">
+                        Második lehetőség
+                    </button>
+                </span>
                 <button onclick="confirmAction()" id="confirmButton"
                     class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
                     Megerősítés

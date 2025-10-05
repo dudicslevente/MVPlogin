@@ -768,7 +768,6 @@ body {
     align-items: center;
     padding: 0.75rem;
     border-radius: 0.375rem;
-    border: 1px solid var(--border-primary);
     cursor: move;
     transition: all 0.2s ease;
     user-select: none;
@@ -777,6 +776,64 @@ body {
 .employee-card-with-pic:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 6px -1px var(--shadow);
+}
+
+/* Custom styled employee cards - these should take precedence */
+.employee-card-with-pic.custom-styled-employee-card {
+    background-color: transparent !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    color: #000 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card {
+    color: #fff !important;
+}
+
+/* Override all other styles for custom styled cards */
+.employee-card-with-pic.custom-styled-employee-card,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card,
+.employee-card-with-pic.custom-styled-employee-card.color-1,
+.employee-card-with-pic.custom-styled-employee-card.color-2,
+.employee-card-with-pic.custom-styled-employee-card.color-3,
+.employee-card-with-pic.custom-styled-employee-card.color-4,
+.employee-card-with-pic.custom-styled-employee-card.color-5,
+.employee-card-with-pic.custom-styled-employee-card.color-6,
+.employee-card-with-pic.custom-styled-employee-card.color-7,
+.employee-card-with-pic.custom-styled-employee-card.color-8,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-1,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-2,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-3,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-4,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-5,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-6,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-7,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-8 {
+    background-color: transparent !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    color: #000 !important;
+}
+
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-1,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-2,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-3,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-4,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-5,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-6,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-7,
+[data-theme="dark"] .employee-card-with-pic.custom-styled-employee-card.color-8 {
+    color: #fff !important;
+}
+
+/* Ensure proper text color in both light and dark modes */
+.employee-card-with-pic {
+    color: #000;
+}
+
+[data-theme="dark"] .employee-card-with-pic {
+    color: #fff;
 }
 
 /* Dark mode specific styles */
@@ -1265,50 +1322,124 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 /* Month view text color adjustments for theme contrast */
 /* Ensure employee names in month view are clearly readable: black in light mode, white in dark mode. */
-.month-day .shift-card { color: #000; }
-[data-theme="dark"] .month-day .shift-card { color: #fff; }
+.month-day .shift-card { 
+    color: #000; 
+    background-color: transparent !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+}
+
+[data-theme="dark"] .month-day .shift-card { 
+    color: #fff; 
+}
 
 /* Fix for employee card colors in month view in dark mode */
 [data-theme="dark"] .month-day .shift-card.color-1 {
-    background-color: var(--color-1) !important;
-    color: #1e40af !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-2 {
-    background-color: var(--color-2) !important;
-    color: #166534 !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-3 {
-    background-color: var(--color-3) !important;
-    color: #3730a3 !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-4 {
-    background-color: var(--color-4) !important;
-    color: #92400e !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-5 {
-    background-color: var(--color-5) !important;
-    color: #991b1b !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-6 {
-    background-color: var(--color-6) !important;
-    color: #7c3aed !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-7 {
-    background-color: var(--color-7) !important;
-    color: #047857 !important;
+    background-color: transparent !important;
+    color: #fff !important;
 }
 
 [data-theme="dark"] .month-day .shift-card.color-8 {
-    background-color: var(--color-8) !important;
-    color: #be185d !important;
+    background-color: transparent !important;
+    color: #fff !important;
+}
+
+/* Visual indicator for selectable weeks in month view */
+.selectable-week {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.selectable-week::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed #3b82f6;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.selectable-week:hover::before {
+    opacity: 0.7;
+}
+
+/* Visual indicator for pasteable weeks in month view */
+.pasteable-week {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.pasteable-week::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed #10b981;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.pasteable-week:hover::after {
+    opacity: 0.7;
+}
+
+/* More obvious highlight for selected week */
+.highlighted-week {
+    background-color: #dbeafe !important;
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 0 0 2px #3b82f6;
+    position: relative;
+    z-index: 1;
+}
+
+[data-theme="dark"] .highlighted-week {
+    background-color: #384965 !important;
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 0 0 2px #3b82f6;
 }
 
 /* Statistics View Controls */
