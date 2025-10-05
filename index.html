@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles.css">
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -213,22 +214,6 @@
                     </div>
                 </div>
             </div>
-
-                    <!-- Week View -->
-                    <div id="weekView" class="schedule-view active">
-                        <div class="schedule-grid border rounded-lg overflow-hidden" id="weekGrid">
-                            <!-- Week grid will be populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Month View -->
-                    <div id="monthView" class="schedule-view">
-                        <div class="month-grid" id="monthGrid">
-                            <!-- Month grid will be populated here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
         </main>
     </div>
     <!-- Employees Page -->
@@ -319,6 +304,43 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- View Controls -->
+            <div class="mb-6 bg-white p-4 rounded-lg shadow">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="switchStatsView('week')" id="weekStatsBtn"
+                            class="stats-view-btn active px-3 py-1 rounded-md text-sm">
+                            Heti
+                        </button>
+                        <button onclick="switchStatsView('month')" id="monthStatsBtn"
+                            class="stats-view-btn px-3 py-1 rounded-md text-sm">
+                            Havi
+                        </button>
+                        <button onclick="switchStatsView('year')" id="yearStatsBtn"
+                            class="stats-view-btn px-3 py-1 rounded-md text-sm">
+                            Éves
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Period navigation will be inserted here by JavaScript -->
+                        <div id="statsPeriodControls" class="flex items-center space-x-2">
+                            <button onclick="navigateStatsPeriod('prev')"
+                                class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                                <i data-feather="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <div class="text-center min-w-[150px]">
+                                <div class="text-sm font-medium text-gray-700" id="statsPeriodLabel">Jelenlegi Hét</div>
+                                <div class="text-xs text-gray-500" id="statsPeriodDates">Betöltés...</div>
+                            </div>
+                            <button onclick="navigateStatsPeriod('next')"
+                                class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                                <i data-feather="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-lg shadow">
@@ -368,16 +390,16 @@
             </div>
 
             <!-- Charts and Analytics -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-lg shadow">
+            <div id="statsChartsContainer" class="flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Órák részleg szerint</h3>
-                    <div id="departmentChart" class="h-64 flex items-center justify-center text-gray-500">
+                    <div id="departmentChart" class="h-64 flex items-center justify-center text-gray-500 min-w-[600px]">
                         Diagram itt lesz megjelenítve
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow">
+                <div class="bg-white p-6 rounded-lg shadow overflow-x-auto">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Heti beosztás áttekintése</h3>
-                    <div id="weeklyChart" class="h-64 flex items-center justify-center text-gray-500">
+                    <div id="weeklyChart" class="h-64 flex items-center justify-center text-gray-500 min-w-[600px]">
                         Diagram itt lesz megjelenítve
                     </div>
                 </div>
@@ -385,8 +407,14 @@
 
             <!-- Employee Performance Table -->
             <div class="mt-8 bg-white rounded-lg shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <h3 class="text-lg font-medium text-gray-900">Alkalmazottak teljesítményei</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="scheduleManager.exportPayData('excel')" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm flex items-center">
+                            <i data-feather="file-text" class="w-4 h-4 mr-1"></i>
+                            Exportálás Excel-be
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -397,16 +425,22 @@
                                     Alkalmazott</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Órák ezen a héten</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Órák ebben a hónapban</th>
+                                    Aktuális időszak órái</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Túlórák</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Betegszabadság</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Szabadság</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Jelenléti Arány</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fizetés</th>
                             </tr>
                         </thead>
                         <tbody id="performanceTableBody" class="bg-white divide-y divide-gray-200">

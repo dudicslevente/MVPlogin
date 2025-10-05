@@ -1167,3 +1167,43 @@ body {
 /* Ensure employee names in month view are clearly readable: black in light mode, white in dark mode. */
 .month-day .shift-card { color: #000; }
 [data-theme="dark"] .month-day .shift-card { color: #fff; }
+
+/* Statistics View Controls */
+.stats-view-btn {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.stats-view-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.stats-view-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Chart scrolling */
+#statsChartsContainer {
+    overflow-x: hidden;
+}
+
+#statsChartsContainer > div {
+    scroll-snap-align: start;
+}
+
+/* Dark mode statistics controls */
+[data-theme="dark"] .stats-view-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .stats-view-btn:hover {
+    background-color: var(--border-primary);
+}
+
+[data-theme="dark"] .stats-view-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}

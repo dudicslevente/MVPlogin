@@ -781,39 +781,6 @@ avigation
         return '$';
     }
 
-    // New function to format currency with proper positioning
-    formatCurrency(amount) {
-        const symbol = this.getCurrencySymbol();
-        let formattedAmount;
-        
-        // Format the amount with thousand separators (spaces)
-        if (typeof amount === 'number') {
-            // For Ft, no decimals
-            if (symbol === 'Ft') {
-                formattedAmount = Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            } else {
-                // For other currencies, keep 2 decimals
-                formattedAmount = amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            }
-        } else {
-            formattedAmount = amount;
-        }
-        
-        // For Ft, place symbol after amount with space
-        if (symbol === 'Ft') {
-            return `${formattedAmount} Ft`;
-        }
-        
-        // For other currencies, place symbol before amount
-        return `${symbol}${formattedAmount}`;
-    }
-
-    // New function to format numbers with thousand separators
-    formatNumber(number, decimals = 2) {
-        if (typeof number !== 'number') return number;
-        return number.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    }
-
     hexToRgb(hex) {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
@@ -1434,7 +1401,7 @@ avigation
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.department}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.minHours} - ${employee.maxHours}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${this.formatCurrency(employee.basePay)}/ó</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${this.getCurrencySymbol()}${employee.basePay}/hr</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.vacationDaysPerYear}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
@@ -1458,6 +1425,151 @@ avigation
         if (typeof feather !== 'undefined') {
             feather.replace();
         }
+    }
+
+    renderPerformanceTable(employeeStats) {
+        const tbody = document.getElementById('performanceTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        // Sort employees by hours worked (descending)
+        const sortedStats = [...employeeStats].sort((a, b) => b.monthHours - a.monthHours);
+        
+        sortedStats.forEach(stat => {
+            const row = document.createElement('tr');
+            
+            // Determine which hours to display based on current view
+            let hoursDisplay = '0h';
+            let overtimeDisplay = '0h';
+            
+            if (this.currentStatsView === 'week') {
+                hoursDisplay = `${stat.weekHours}h`;
+                overtimeDisplay = `${stat.overtimeHours}h`;
+            } else if (this.currentStatsView === 'month') {
+                hoursDisplay = `${Math.round(stat.monthHours)}h`;
+                overtimeDisplay = `${Math.round(stat.overtimeHours)}h`;
+            } else if (this.currentStatsView === 'year') {
+                hoursDisplay = `${Math.round(stat.monthHours)}h`; // Using monthHours as it accumulates all hours
+                overtimeDisplay = `${Math.round(stat.overtimeHours)}h`;
+            }
+            
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full ${stat.employee.color} flex items-center justify-center mr-3">
+                            <i data-feather="user" class="w-4 h-4"></i>
+                        </div>
+                        <div class="text-sm font-medium text-gray-900">
+                            ${this.getEmployeeDisplayName(stat.employee)}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${hoursDisplay}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${overtimeDisplay}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.attendanceRate}%</td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    addEmployee(employee) {
+        this.employees.push(employee);
+        this.saveData();
+        this.renderEmployeeTable();
+    }
+
+    editEmployee(employeeId) {
+        const employee = this.employees.find(emp => emp.id === employeeId);
+        if (!employee) return;
+        this.openEmployeeModal(employee);
+    }
+
+    saveEmployee(employee) {
+        const existingEmployee = this.employees.find(emp => emp.id === employee.id);
+        if (existingEmployee) {
+            Object.assign(existingEmployee, employee);
+        } else {
+            this.employees.push(employee);
+        }
+        this.saveData();
+        this.renderEmployeeTable();
+    }
+
+    deleteEmployee(employeeId) {
+        const employee = this.employees.find(emp => emp.id === employeeId);
+        if (!employee) return;
+
+        this.showConfirmation(
+            'Alkalmazott Törlése',
+            `Biztos vagy benne, hogy törölni akarod ${this.getEmployeeDisplayName(employee)} alkalmazottát?`,
+            () => {
+                this.employees = this.employees.filter(emp => emp.id !== employeeId);
+                this.saveData();
+                this.renderEmployeeTable();
+                this.showNotification('Alkalmazott sikeresen törölve', 'success');
+            }
+        );
+    }
+
+    openEmployeeModal(employee = null) {
+        this.editingEmployee = employee;
+        document.getElementById('employeeModal').classList.remove('hidden');
+        document.getElementById('employeeName').value = employee ? employee.name : '';
+        document.getElementById('employeeEmail').value = employee ? employee.email : '';
+        document.getElementById('employeeDepartment').value = employee ? employee.department : '';
+        document.getElementById('employeeMinHours').value = employee ? employee.minHours : '';
+        document.getElementById('employeeMaxHours').value = employee ? employee.maxHours : '';
+        document.getElementById('employeeBasePay').value = employee ? employee.basePay : '';
+        document.getElementById('employeeVacationDays').value = employee ? employee.vacationDaysPerYear : '';
+        document.getElementById('employeeColor').value = employee ? employee.color : '';
+        document.getElementById('employeeProfilePic').value = employee ? employee.profilePic : '';
+        document.getElementById('employeeIsActive').checked = employee ? employee.isActive : true;
+    }
+
+    closeEmployeeModal() {
+        document.getElementById('employeeModal').classList.add('hidden');
+    }
+
+    // Utility Functions
+    getEmployeeDisplayName(employee) {
+        return employee.name || employee.email || 'Névtelen Alkalmazott';
+    }
+
+    getCurrencySymbol() {
+        return '€';
+    }
+
+    generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    showNotification(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        document.getElementById('notifications').appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    showConfirmation(title, message, onConfirm) {
+        document.getElementById('confirmationTitle').textContent = title;
+        document.getElementById('confirmationMessage').textContent = message;
+        document.getElementById('confirmationModal').classList.remove('hidden');
+
+        document.getElementById('confirmButton').onclick = () => {
+            onConfirm();
+            this.closeConfirmationModal();
+        };
+    }
+
+    closeConfirmationModal() {
+        document.getElementById('confirmationModal').classList.add('hidden');
+    }
     }
 
     openEmployeeModal(employee = null) {
@@ -2202,20 +2314,6 @@ avigation
         // Render charts and tables
         this.renderPerformanceTable(stats.employeeStats);
         this.renderDepartmentChart(stats.departmentStats);
-        
-        // Update chart title based on current view
-        const chartTitle = document.querySelector('#weeklyChart').previousElementSibling;
-        if (chartTitle) {
-            if (this.currentStatsView === 'week') {
-                chartTitle.textContent = 'Heti beosztás áttekintése';
-            } else if (this.currentStatsView === 'month') {
-                chartTitle.textContent = 'Havi beosztás áttekintése';
-            } else if (this.currentStatsView === 'year') {
-                chartTitle.textContent = 'Éves beosztás áttekintése';
-            }
-        }
-        
-        // Render the chart with the appropriate data
         this.renderWeeklyChart(stats.weeklyStats);
     }
 
@@ -2225,15 +2323,10 @@ avigation
         let sickDays = 0;
         const employeeStats = {};
         const departmentStats = {};
-        let weeklyStats = {};
-        
-        // Initialize weeklyStats based on current view
-        if (this.currentStatsView === 'week') {
-            weeklyStats = {
-                Hétfő: 0, Kedd: 0, Szerda: 0, Csütörtök: 0,
-                Péntek: 0, Szombat: 0, Vasárnap: 0
-            };
-        }
+        const weeklyStats = {
+            Hétfő: 0, Kedd: 0, Szerda: 0, Csütörtök: 0,
+            Péntek: 0, Szombat: 0, Vasárnap: 0
+        };
         
         // Initialize employee stats
         this.employees.forEach(emp => {
@@ -2258,22 +2351,18 @@ avigation
             departmentStats[emp.department].employees++;
         });
         
+        // Reset global counters
+        this.totalHours = 0;
+        this.vacationDays = 0;
+        this.sickDays = 0;
+        
         // Calculate based on current stats view
         if (this.currentStatsView === 'week') {
-            const result = this.calculateWeeklyStatistics(employeeStats, departmentStats, weeklyStats);
-            totalHours = result.totalHours;
-            vacationDays = result.vacationDays;
-            sickDays = result.sickDays;
+            this.calculateWeeklyStatistics(employeeStats, departmentStats, weeklyStats);
         } else if (this.currentStatsView === 'month') {
-            const result = this.calculateMonthlyStatistics(employeeStats, departmentStats, weeklyStats);
-            totalHours = result.totalHours;
-            vacationDays = result.vacationDays;
-            sickDays = result.sickDays;
+            this.calculateMonthlyStatistics(employeeStats, departmentStats);
         } else if (this.currentStatsView === 'year') {
-            const result = this.calculateYearlyStatistics(employeeStats, departmentStats, weeklyStats);
-            totalHours = result.totalHours;
-            vacationDays = result.vacationDays;
-            sickDays = result.sickDays;
+            this.calculateYearlyStatistics(employeeStats, departmentStats);
         }
         
         // Calculate attendance rates
@@ -2285,9 +2374,9 @@ avigation
         
         return {
             totalEmployees: this.employees.filter(emp => emp.isActive).length,
-            totalHours: Math.round(totalHours * 10) / 10,
-            vacationDays,
-            sickDays,
+            totalHours: Math.round(this.totalHours * 10) / 10,
+            vacationDays: this.vacationDays,
+            sickDays: this.sickDays,
             employeeStats: Object.values(employeeStats),
             departmentStats: Object.values(departmentStats),
             weeklyStats
@@ -2295,35 +2384,8 @@ avigation
     }
 
     calculateWeeklyStatistics(employeeStats, departmentStats, weeklyStats) {
-        let totalHours = 0;
-        let vacationDays = 0;
-        let sickDays = 0;
-        
         const weekKey = this.currentStatsPeriod.week;
         const weekSchedule = this.schedules[weekKey] || {};
-        
-        // Calculate month hours for all employees
-        const currentMonth = this.currentMonth;
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                const date = new Date(dateStr);
-                if (date.getFullYear() === currentMonth.year && date.getMonth() === currentMonth.month) {
-                    weekSchedule[dateStr].forEach(shift => {
-                        const duration = this.calculateShiftDuration(shift.startTime, shift.endTime);
-                        if (employeeStats[shift.employeeId] && shift.type === 'regular') {
-                            employeeStats[shift.employeeId].monthHours += duration;
-                        }
-                        // Count sick and vacation days for the month
-                        if (shift.type === 'vacation') {
-                            vacationDays++;
-                        } else if (shift.type === 'sick') {
-                            sickDays++;
-                        }
-                    });
-                }
-            });
-        });
         
         // Calculate from current week
         const weekDates = this.getWeekDates(this.currentStatsPeriod.week);
@@ -2338,11 +2400,11 @@ avigation
                 const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                 
                 if (shift.type === 'vacation') {
-                    vacationDays++;
+                    this.vacationDays++;
                 } else if (shift.type === 'sick') {
-                    sickDays++;
+                    this.sickDays++;
                 } else if (shift.type === 'regular') {
-                    totalHours += duration;
+                    this.totalHours += duration;
                     
                     if (dayName && weeklyStats[dayName] !== undefined) {
                         weeklyStats[dayName] += duration;
@@ -2367,24 +2429,10 @@ avigation
                 }
             });
         });
-        
-        return { totalHours, vacationDays, sickDays };
     }
 
-    calculateMonthlyStatistics(employeeStats, departmentStats, weeklyStats) {
-        let totalHours = 0;
-        let vacationDays = 0;
-        let sickDays = 0;
-        
+    calculateMonthlyStatistics(employeeStats, departmentStats) {
         const currentMonth = this.currentStatsPeriod.month;
-        
-        // Initialize daily stats for the current month
-        const monthlyStats = {};
-        const daysInMonth = new Date(currentMonth.year, currentMonth.month + 1, 0).getDate();
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${currentMonth.year}-${String(currentMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            monthlyStats[day] = 0;
-        }
         
         // Calculate hours for the current month
         Object.keys(this.schedules).forEach(weekKey => {
@@ -2397,23 +2445,18 @@ avigation
                         const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                         
                         if (shift.type === 'vacation') {
-                            vacationDays++;
+                            this.vacationDays++;
                         } else if (shift.type === 'sick') {
-                            sickDays++;
+                            this.sickDays++;
                         } else if (shift.type === 'regular') {
-                            totalHours += duration;
+                            this.totalHours += duration;
                             
                             if (employee && departmentStats[employee.department]) {
                                 departmentStats[employee.department].hours += duration;
                             }
-                            
-                            // Add to daily stats
-                            const day = new Date(dateStr).getDate();
-                            if (monthlyStats[day] !== undefined) {
-                                monthlyStats[day] += duration;
-                            }
                         }
                         
+                        // Update employee stats for month view
                         if (employeeStats[shift.employeeId]) {
                             employeeStats[shift.employeeId].totalShifts++;
                             if (shift.type === 'regular') {
@@ -2426,27 +2469,17 @@ avigation
             });
         });
         
-        // Copy monthly stats to weeklyStats object for consistency
-        Object.keys(monthlyStats).forEach(day => {
-            weeklyStats[`Day ${day}`] = monthlyStats[day];
+        // Calculate overtime for each employee based on monthly hours
+        Object.values(employeeStats).forEach(stat => {
+            // Assuming 160 hours per month (40 hours/week * 4 weeks)
+            if (stat.monthHours > 160) {
+                stat.overtimeHours = stat.monthHours - 160;
+            }
         });
-        
-        return { totalHours, vacationDays, sickDays };
     }
 
-    calculateYearlyStatistics(employeeStats, departmentStats, weeklyStats) {
-        let totalHours = 0;
-        let vacationDays = 0;
-        let sickDays = 0;
-        
+    calculateYearlyStatistics(employeeStats, departmentStats) {
         const currentYear = this.currentStatsPeriod.year;
-        
-        // Initialize monthly stats for the current year
-        const yearlyStats = {};
-        const monthNames = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Sze', 'Okt', 'Nov', 'Dec'];
-        for (let month = 0; month < 12; month++) {
-            yearlyStats[monthNames[month]] = 0;
-        }
         
         // Calculate hours for the current year
         Object.keys(this.schedules).forEach(weekKey => {
@@ -2459,23 +2492,18 @@ avigation
                         const employee = this.employees.find(emp => String(emp.id) === String(shift.employeeId));
                         
                         if (shift.type === 'vacation') {
-                            vacationDays++;
+                            this.vacationDays++;
                         } else if (shift.type === 'sick') {
-                            sickDays++;
+                            this.sickDays++;
                         } else if (shift.type === 'regular') {
-                            totalHours += duration;
+                            this.totalHours += duration;
                             
                             if (employee && departmentStats[employee.department]) {
                                 departmentStats[employee.department].hours += duration;
                             }
-                            
-                            // Add to monthly stats
-                            const month = date.getMonth();
-                            if (yearlyStats[monthNames[month]] !== undefined) {
-                                yearlyStats[monthNames[month]] += duration;
-                            }
                         }
                         
+                        // Update employee stats for year view
                         if (employeeStats[shift.employeeId]) {
                             employeeStats[shift.employeeId].totalShifts++;
                             if (shift.type === 'regular') {
@@ -2489,12 +2517,13 @@ avigation
             });
         });
         
-        // Copy yearly stats to weeklyStats object for consistency
-        Object.keys(yearlyStats).forEach(month => {
-            weeklyStats[month] = yearlyStats[month];
+        // Calculate overtime for each employee based on yearly hours
+        Object.values(employeeStats).forEach(stat => {
+            // Assuming 2080 hours per year (40 hours/week * 52 weeks)
+            if (stat.monthHours > 2080) {
+                stat.overtimeHours = stat.monthHours - 2080;
+            }
         });
-        
-        return { totalHours, vacationDays, sickDays };
     }
 
     calculateShiftDuration(startTime, endTime) {
@@ -2509,55 +2538,7 @@ avigation
         
         tbody.innerHTML = '';
         
-        // Calculate sick and vacation days for each employee
-        const employeeLeaveStats = {};
-        this.employees.forEach(emp => {
-            employeeLeaveStats[emp.id] = {
-                sickDaysTaken: 0,
-                vacationDaysTaken: 0,
-                maxSickDays: emp.sickDaysPerYear || 0,
-                maxVacationDays: emp.vacationDaysPerYear || 0
-            };
-        });
-        
-        // Count sick and vacation days from schedules
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                weekSchedule[dateStr].forEach(shift => {
-                    if (shift.type === 'sick' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].sickDaysTaken++;
-                    } else if (shift.type === 'vacation' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].vacationDaysTaken++;
-                    }
-                });
-            });
-        });
-        
         employeeStats.forEach(stat => {
-            const leaveStats = employeeLeaveStats[stat.employee.id] || { sickDaysTaken: 0, vacationDaysTaken: 0, maxSickDays: 0, maxVacationDays: 0 };
-            
-            // Determine which hours to show based on current view
-            let hoursDisplay = '0 ó';
-            let regularHours = 0;
-            let overtimeHours = stat.overtimeHours;
-            
-            if (this.currentStatsView === 'week') {
-                hoursDisplay = stat.weekHours + ' ó';
-                regularHours = Math.max(0, stat.weekHours - overtimeHours);
-            } else if (this.currentStatsView === 'month') {
-                hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
-            } else if (this.currentStatsView === 'year') {
-                hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
-            }
-            
-            // Calculate pay based on regular hours and overtime
-            const regularPay = regularHours * (stat.employee.basePay || 0);
-            const overtimePay = overtimeHours * (stat.employee.basePay || 0) * (1 + (stat.employee.overtimePremium || 0) / 100);
-            const totalPay = regularPay + overtimePay;
-            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -2570,12 +2551,10 @@ avigation
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${hoursDisplay}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.overtimeHours} ó</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.sickDaysTaken}/${leaveStats.maxSickDays}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${leaveStats.vacationDaysTaken}/${leaveStats.maxVacationDays}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.weekHours}h</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.monthHours}h</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.overtimeHours}h</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${stat.attendanceRate}%</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${this.formatCurrency(totalPay)}</td>
             `;
             tbody.appendChild(row);
         });
@@ -2585,105 +2564,6 @@ avigation
         }
     }
 
-    exportPayData() {
-        // Get the current employee stats
-        const stats = this.calculateStatistics();
-        
-        // Prepare data for export
-        const exportData = [];
-        
-        // Add header row
-        exportData.push(['Alkalmazott neve', 'Aktuális időszak órái', 'Túlórák', 'Betegszabadságok', 'Szabadságok', 'Jelenléti Arány', 'Fizetés']);
-        
-        // Calculate leave stats (same logic as in renderPerformanceTable)
-        const employeeLeaveStats = {};
-        this.employees.forEach(emp => {
-            employeeLeaveStats[emp.id] = {
-                sickDaysTaken: 0,
-                vacationDaysTaken: 0,
-                maxSickDays: emp.sickDaysPerYear || 0,
-                maxVacationDays: emp.vacationDaysPerYear || 0
-            };
-        });
-        
-        // Count sick and vacation days from schedules
-        Object.keys(this.schedules).forEach(weekKey => {
-            const weekSchedule = this.schedules[weekKey];
-            Object.keys(weekSchedule).forEach(dateStr => {
-                weekSchedule[dateStr].forEach(shift => {
-                    if (shift.type === 'sick' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].sickDaysTaken++;
-                    } else if (shift.type === 'vacation' && employeeLeaveStats[shift.employeeId]) {
-                        employeeLeaveStats[shift.employeeId].vacationDaysTaken++;
-                    }
-                });
-            });
-        });
-        
-        // Add data rows
-        stats.employeeStats.forEach(stat => {
-            const leaveStats = employeeLeaveStats[stat.employee.id] || { sickDaysTaken: 0, vacationDaysTaken: 0, maxSickDays: 0, maxVacationDays: 0 };
-            
-            // Determine which hours to show based on current view
-            let hoursDisplay = '0 ó';
-            let regularHours = 0;
-            let overtimeHours = stat.overtimeHours;
-            
-            if (this.currentStatsView === 'week') {
-                hoursDisplay = stat.weekHours + ' ó';
-                regularHours = Math.max(0, stat.weekHours - overtimeHours);
-            } else if (this.currentStatsView === 'month') {
-                hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
-            } else if (this.currentStatsView === 'year') {
-                hoursDisplay = stat.monthHours + ' ó';
-                regularHours = Math.max(0, stat.monthHours - overtimeHours);
-            }
-            
-            // Calculate pay based on regular hours and overtime
-            const regularPay = regularHours * (stat.employee.basePay || 0);
-            const overtimePay = overtimeHours * (stat.employee.basePay || 0) * (1 + (stat.employee.overtimePremium || 0) / 100);
-            const totalPay = regularPay + overtimePay;
-            
-            // Format data for export
-            const rowData = [
-                this.getEmployeeDisplayName(stat.employee),
-                hoursDisplay,
-                stat.overtimeHours + ' ó',
-                leaveStats.sickDaysTaken + '/' + leaveStats.maxSickDays,
-                leaveStats.vacationDaysTaken + '/' + leaveStats.maxVacationDays,
-                stat.attendanceRate + '%',
-                this.formatCurrency(totalPay)
-            ];
-            
-            exportData.push(rowData);
-        });
-        
-        // Export to Excel
-        this.exportToExcel(exportData);
-    }
-    
-    exportToExcel(data) {
-        try {
-            // Create worksheet using XLSX.utils.aoa_to_sheet
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            
-            // Create workbook
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Alkalmazottak teljesítmányei');
-            
-            // Generate file name
-            const fileName = `alkalmazottak_teljesitmenyei_${new Date().toISOString().slice(0, 10)}.${this.currentStatsView}.xlsx`;
-            
-            // Download file
-            XLSX.writeFile(wb, fileName);
-        } catch (error) {
-            console.error('Hiba az exportálásban:', error);
-            // Fallback to CSV if Excel export fails
-            this.exportToCSV(data);
-        }
-    }
-    
     renderDepartmentChart(departmentStats) {
         const container = document.getElementById('departmentChart');
         if (!container) return;
@@ -2709,11 +2589,11 @@ avigation
             const bar = document.createElement('div');
             bar.className = 'chart-bar w-12';
             bar.style.height = `${barHeight}px`;
-            bar.title = `${dept.name}: ${this.formatNumber(dept.hours, 1)} óra`;
+            bar.title = `${dept.name}: ${dept.hours.toFixed(1)} hours`;
             
             const value = document.createElement('div');
             value.className = 'chart-value';
-            value.textContent = `${this.formatNumber(dept.hours, 1)} ó`;
+            value.textContent = `${dept.hours.toFixed(1)}h`;
             
             const label = document.createElement('div');
             label.className = 'chart-label';
@@ -2734,199 +2614,31 @@ avigation
         
         container.innerHTML = '';
         
-        const keys = Object.keys(weeklyStats);
-        const values = Object.values(weeklyStats);
-        const maxHours = Math.max(...values);
-        
-        // If no data, show a message
-        if (maxHours === 0 && values.every(v => v === 0)) {
-            container.innerHTML = '<div class="text-center text-gray-500">No data available</div>';
-            return;
-        }
-        
-        // Add a wrapper for horizontal scrolling if needed
-        const scrollWrapper = document.createElement('div');
-        scrollWrapper.className = 'overflow-x-auto w-full';
+        const days = Object.keys(weeklyStats);
+        const maxHours = Math.max(...Object.values(weeklyStats));
         
         const chartContainer = document.createElement('div');
-        chartContainer.className = 'flex items-end justify-center h-full mx-auto';
+        chartContainer.className = 'flex items-end justify-center space-x-2 h-full';
         
-        // Adjust bar width and spacing based on number of items and view
-        let barWidthClass = 'w-8';
-        let spaceClass = 'space-x-2';
-        
-        // Check if we need to make bars narrower for better fit
-        if (this.currentStatsView === 'month' && keys.length > 15) {
-            // For monthly view with many days, make bars narrower
-            barWidthClass = 'w-3';
-            spaceClass = 'space-x-1';
-        } else if (this.currentStatsView === 'month' && keys.length > 10) {
-            // For monthly view with moderate number of days
-            barWidthClass = 'w-4';
-            spaceClass = 'space-x-1';
-        } else if (this.currentStatsView === 'year') {
-            // For yearly view, standard width is fine
-            barWidthClass = 'w-8';
-            spaceClass = 'space-x-2';
-        } else {
-            // For weekly view, standard width
-            barWidthClass = 'w-8';
-            spaceClass = 'space-x-2';
-        }
-        
-        chartContainer.classList.add(spaceClass);
-        
-        // Set minimum width to enable horizontal scrolling when needed
-        if (this.currentStatsView === 'month' && keys.length > 20) {
-            chartContainer.style.minWidth = `${keys.length * 20}px`;
-        } else if (this.currentStatsView === 'month' && keys.length > 15) {
-            chartContainer.style.minWidth = `${keys.length * 25}px`;
-        } else {
-            chartContainer.style.minWidth = '100%';
-        }
-        
-        keys.forEach(key => {
-            const hours = weeklyStats[key];
+        days.forEach(day => {
+            const hours = weeklyStats[day];
             const barContainer = document.createElement('div');
-            barContainer.className = 'flex flex-col items-center flex-shrink-0';
+            barContainer.className = 'flex flex-col items-center';
             
             const barHeight = maxHours > 0 ? (hours / maxHours) * 200 : 0;
             
             const bar = document.createElement('div');
-            bar.className = `chart-bar ${barWidthClass}`;
+            bar.className = 'chart-bar w-8';
             bar.style.height = `${barHeight}px`;
-            bar.title = `${key}: ${this.formatNumber(hours, 1)} óra`;
+            bar.title = `${day}: ${hours.toFixed(1)} hours`;
             
             const value = document.createElement('div');
             value.className = 'chart-value';
-            value.textContent = `${this.formatNumber(hours, 1)} ó`;
-            value.style.fontSize = '0.6rem';
+            value.textContent = `${hours.toFixed(1)}h`;
             
             const label = document.createElement('div');
             label.className = 'chart-label';
-            label.style.fontSize = '0.6rem';
-            
-            // Format labels based on current view
-            if (this.currentStatsView === 'week') {
-                label.textContent = key.substring(0, 3);
-            } else if (this.currentStatsView === 'month') {
-                // For monthly view, key is "Day X"
-                label.textContent = key.replace('Day ', '');
-            } else if (this.currentStatsView === 'year') {
-                // For yearly view, key is month name
-                label.textContent = key;
-            }
-            
-            barContainer.appendChild(value);
-            barContainer.appendChild(bar);
-            barContainer.appendChild(label);
-            chartContainer.appendChild(barContainer);
-        });
-        
-        scrollWrapper.appendChild(chartContainer);
-        container.appendChild(scrollWrapper);
-    }
-
-    renderMonthlyChart(employeeStats) {
-        const container = document.getElementById('weeklyChart');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Update the chart title
-        const chartTitle = document.querySelector('#weeklyChart').previousElementSibling;
-        if (chartTitle) {
-            chartTitle.textContent = 'Havi beosztás áttekintése';
-        }
-        
-        // Sort employees by monthly hours
-        const sortedStats = [...employeeStats].sort((a, b) => b.monthHours - a.monthHours);
-        // Take top 10 employees for better visualization
-        const topStats = sortedStats.slice(0, 10);
-        
-        if (topStats.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500">No data available</div>';
-            return;
-        }
-        
-        const maxHours = Math.max(...topStats.map(stat => stat.monthHours));
-        
-        const chartContainer = document.createElement('div');
-        chartContainer.className = 'flex items-end justify-center space-x-4 h-full';
-        
-        topStats.forEach(stat => {
-            const barContainer = document.createElement('div');
-            barContainer.className = 'flex flex-col items-center';
-            
-            const barHeight = maxHours > 0 ? (stat.monthHours / maxHours) * 200 : 0;
-            
-            const bar = document.createElement('div');
-            bar.className = 'chart-bar w-12';
-            bar.style.height = `${barHeight}px`;
-            bar.title = `${this.getEmployeeDisplayName(stat.employee)}: ${this.formatNumber(stat.monthHours, 1)} óra`;
-            
-            const value = document.createElement('div');
-            value.className = 'chart-value';
-            value.textContent = `${this.formatNumber(stat.monthHours, 1)} ó`;
-            
-            const label = document.createElement('div');
-            label.className = 'chart-label';
-            label.textContent = this.getEmployeeDisplayName(stat.employee);
-            
-            barContainer.appendChild(value);
-            barContainer.appendChild(bar);
-            barContainer.appendChild(label);
-            chartContainer.appendChild(barContainer);
-        });
-        
-        container.appendChild(chartContainer);
-    }
-
-    renderYearlyChart(employeeStats) {
-        const container = document.getElementById('weeklyChart');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        // Update the chart title
-        const chartTitle = document.querySelector('#weeklyChart').previousElementSibling;
-        if (chartTitle) {
-            chartTitle.textContent = 'Éves beosztás áttekintése';
-        }
-        
-        // Sort employees by yearly hours
-        const sortedStats = [...employeeStats].sort((a, b) => b.monthHours - a.monthHours);
-        // Take top 10 employees for better visualization
-        const topStats = sortedStats.slice(0, 10);
-        
-        if (topStats.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500">No data available</div>';
-            return;
-        }
-        
-        const maxHours = Math.max(...topStats.map(stat => stat.monthHours));
-        
-        const chartContainer = document.createElement('div');
-        chartContainer.className = 'flex items-end justify-center space-x-4 h-full';
-        
-        topStats.forEach(stat => {
-            const barContainer = document.createElement('div');
-            barContainer.className = 'flex flex-col items-center';
-            
-            const barHeight = maxHours > 0 ? (stat.monthHours / maxHours) * 200 : 0;
-            
-            const bar = document.createElement('div');
-            bar.className = 'chart-bar w-12';
-            bar.style.height = `${barHeight}px`;
-            bar.title = `${this.getEmployeeDisplayName(stat.employee)}: ${this.formatNumber(stat.monthHours, 1)} óra`;
-            
-            const value = document.createElement('div');
-            value.className = 'chart-value';
-            value.textContent = `${this.formatNumber(stat.monthHours, 1)} ó`;
-            
-            const label = document.createElement('div');
-            label.className = 'chart-label';
-            label.textContent = this.getEmployeeDisplayName(stat.employee);
+            label.textContent = day.substring(0, 3);
             
             barContainer.appendChild(value);
             barContainer.appendChild(bar);
