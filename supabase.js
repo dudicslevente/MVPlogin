@@ -14,8 +14,8 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
-  // Only attempt to create profile immediately if a session exists (email confirmation disabled)
-  if (data.session && user && username) {
+  // Always attempt to create profile with the username, regardless of session status
+  if (user && username) {
     await window.supabaseClient
       .from('profiles')
       .upsert({ id: user.id, username, display_name: username })
