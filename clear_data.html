@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Schedule Manager Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #dc2626;
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Clear Schedule Manager Data</h1>
+        <p>This tool will remove all existing employee, schedule, and configuration data from your browser.</p>
+        <p>After running this, the application will start fresh with no sample data.</p>
+        
+        <button id="clearButton" onclick="clearAllData()">Clear All Data</button>
+        
+        <div id="result" class="hidden">
+            <h2 class="success">Data Successfully Cleared!</h2>
+            <p>All employee and schedule data has been removed.</p>
+            <p>You can now use the application with a clean slate.</p>
+        </div>
+    </div>
+
+    <script>
+        function clearAllData() {
+            try {
+                // Clear all schedule manager data
+                localStorage.removeItem('scheduleManager_employees');
+                localStorage.removeItem('scheduleManager_schedules');
+                localStorage.removeItem('scheduleManager_departments');
+                localStorage.removeItem('scheduleManager_holidays');
+                localStorage.removeItem('scheduleManager_mandatory_vacations');
+                localStorage.removeItem('scheduleManager_theme');
+                
+                console.log('All Schedule Manager data has been cleared from localStorage.');
+                
+                // Show success message
+                document.getElementById('clearButton').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error clearing localStorage:', error);
+                alert('Error clearing data: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

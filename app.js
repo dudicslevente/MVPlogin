@@ -90,7 +90,8 @@ class ScheduleManager {
                 return updatedEmp;
             });
         } else {
-            this.employees = this.getSampleEmployees();
+            // Instead of loading sample employees, start with an empty array
+            this.employees = [];
         }
         
         if (savedSchedules) {
@@ -101,6 +102,9 @@ class ScheduleManager {
         
         if (savedDepartments) {
             this.departments = JSON.parse(savedDepartments);
+        } else {
+            // Instead of loading default departments, start with an empty array
+            this.departments = [];
         }
         
         if (savedHolidays) {
