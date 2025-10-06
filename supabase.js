@@ -16,10 +16,16 @@ async function signUpWithEmail(email, password, username) {
   const user = data.user;
   // Always attempt to create profile with the username, regardless of session status
   if (user && username) {
-    await window.supabaseClient
+    const { error: profileError } = await window.supabaseClient
       .from('profiles')
       .upsert({ id: user.id, username, display_name: username })
       .select();
+    
+    // If there's an error creating the profile, throw it so it can be handled
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      throw profileError;
+    }
   }
   return data;
 }

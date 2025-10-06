@@ -111,6 +111,7 @@
       } catch (err) {
         errorBox.textContent = err.message || 'Regisztráció sikertelen';
         errorBox.classList.remove('hidden');
+        console.error('Signup error:', err);
       } finally {
         btn.disabled = false; btn.textContent = 'Fiók Létrehozása';
       }
