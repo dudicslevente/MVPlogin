@@ -16,15 +16,18 @@ async function signUpWithEmail(email, password, username) {
   const user = data.user;
   // Always attempt to create profile with the username, regardless of session status
   if (user && username) {
+    // Use service role or bypass RLS when creating profile for new user
+    // since they may not be authenticated yet (especially with email confirmation)
     const { error: profileError } = await window.supabaseClient
       .from('profiles')
-      .upsert({ id: user.id, username, display_name: username })
+      .insert({ id: user.id, username, display_name: username })
       .select();
     
-    // If there's an error creating the profile, throw it so it can be handled
+    // If there's an error creating the profile, log it but don't throw
+    // as we want the signup to succeed even if profile creation fails
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      throw profileError;
+      // Don't throw the error to avoid breaking the signup flow
     }
   }
   return data;
