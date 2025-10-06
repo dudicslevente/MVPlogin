@@ -1130,9 +1130,9 @@ avigation
 
     // Currency helpers
     getCurrencySymbol() {
-        const cur = (typeof localStorage !== 'undefined' && localStorage.getItem('scheduleManager_currency')) || '$';
+        const cur = (typeof localStorage !== 'undefined' && localStorage.getItem('scheduleManager_currency')) || 'Ft';
         if (cur === 'Ft' || cur === '€' || cur === '$') return cur;
-        return '$';
+        return 'Ft';
     }
 
     // New function to format currency with proper positioning

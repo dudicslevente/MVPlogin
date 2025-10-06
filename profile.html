@@ -133,9 +133,9 @@
       }
       // Init currency select from localStorage (synced via app_state)
       try {
-        const cur = localStorage.getItem('scheduleManager_currency') || '$';
+        const cur = localStorage.getItem('scheduleManager_currency') || 'Ft';
         const sel = document.getElementById('currencySelect');
-        if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : '$';
+        if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : 'Ft';
       } catch (_) {}
     }
 
@@ -193,7 +193,7 @@
 
       // Save currency preference locally and sync to cloud state
       try {
-        const currency = (document.getElementById('currencySelect') && document.getElementById('currencySelect').value) || '$';
+        const currency = (document.getElementById('currencySelect') && document.getElementById('currencySelect').value) || 'Ft';
         localStorage.setItem('scheduleManager_currency', currency);
         if (typeof window.cloudSyncSave === 'function') await window.cloudSyncSave();
       } catch (_) {}
