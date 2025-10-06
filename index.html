@@ -96,6 +96,11 @@
                     Műszakbeosztás Kezelő
                 </h1>
                 <div class="flex space-x-4">
+                    <button onclick="scheduleManager.openHolidayModal()"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center">
+                        <i data-feather="calendar" class="mr-2"></i>
+                        Ünnepnapok
+                    </button>
                     <button onclick="importSchedule()"
                         class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center">
                         <i data-feather="upload" class="mr-2"></i>
@@ -743,6 +748,101 @@
             </div>
             <div class="mt-6 flex justify-end">
                 <button onclick="closeDepartmentModal()"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Bezárás
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holiday Management Modal -->
+    <div id="holidayModal" class="modal">
+        <div class="modal-content max-w-4xl max-h-screen h-5/6">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-4">
+                    <button onclick="scheduleManager.previousYear()" class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                        <i data-feather="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <h3 class="text-lg font-semibold" id="holidayModalTitle">Ünnepnapok és Kötelező Szabadságok Kezelése</h3>
+                    <button onclick="scheduleManager.nextYear()" class="p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600">
+                        <i data-feather="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <button onclick="scheduleManager.closeHolidayModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <div class="space-y-6 h-full overflow-y-auto pr-2">
+                <div class="flex space-x-4 mb-4">
+                    <button onclick="scheduleManager.showHolidayForm()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex-1">
+                        Ünnepnap Hozzáadása
+                    </button>
+                    <button onclick="scheduleManager.showMandatoryVacationForm()"
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex-1">
+                        Kötelező Szabadság Hozzáadása
+                    </button>
+                </div>
+                
+                <!-- Holiday Form (hidden by default) -->
+                <div id="holidayForm" class="hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-3">Ünnepnap Hozzáadása</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dátum</label>
+                            <input type="date" id="holidayDate" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Név</label>
+                            <input type="text" id="holidayName" placeholder="Ünnepnap neve" class="form-input">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="scheduleManager.addHoliday()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full">
+                                Hozzáadás
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mandatory Vacation Form (hidden by default) -->
+                <div id="mandatoryVacationForm" class="hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-3">Kötelező Szabadság Hozzáadása</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dátum</label>
+                            <input type="date" id="mandatoryVacationDate" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Név</label>
+                            <input type="text" id="mandatoryVacationName" placeholder="Szabadság neve" class="form-input">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="scheduleManager.addMandatoryVacation()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 w-full">
+                                Hozzáadás
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+                    <div class="flex flex-col h-full">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">Ünnepnapok</h4>
+                        <div id="holidayList" class="flex-1 overflow-y-auto border border-gray-200 rounded-md p-2" style="max-height: 400px;">
+                            <!-- Holiday list will be populated here -->
+                        </div>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">Kötelező Szabadságok</h4>
+                        <div id="mandatoryVacationList" class="flex-1 overflow-y-auto border border-gray-200 rounded-md p-2" style="max-height: 400px;">
+                            <!-- Mandatory vacation list will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end pt-4 border-t border-gray-200">
+                <button onclick="scheduleManager.closeHolidayModal()"
                     class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                     Bezárás
                 </button>

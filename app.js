@@ -4,6 +4,9 @@ class ScheduleManager {
         this.employees = [];
         this.schedules = {};
         this.departments = ['sales', 'kitchen', 'service', 'management'];
+        this.holidays = {};
+        this.mandatoryVacations = {};
+        this.currentYear = new Date().getFullYear();
         this.currentWeek = this.getCurrentWeek();
         this.currentMonth = this.getCurrentMonth();
         this.currentView = 'week';
@@ -50,6 +53,8 @@ class ScheduleManager {
         const savedEmployees = localStorage.getItem('scheduleManager_employees');
         const savedSchedules = localStorage.getItem('scheduleManager_schedules');
         const savedDepartments = localStorage.getItem('scheduleManager_departments');
+        const savedHolidays = localStorage.getItem('scheduleManager_holidays');
+        const savedMandatoryVacations = localStorage.getItem('scheduleManager_mandatory_vacations');
         
         if (savedEmployees) {
             this.employees = JSON.parse(savedEmployees);
@@ -97,6 +102,19 @@ class ScheduleManager {
         if (savedDepartments) {
             this.departments = JSON.parse(savedDepartments);
         }
+        
+        if (savedHolidays) {
+            this.holidays = JSON.parse(savedHolidays);
+        } else {
+            this.holidays = {};
+            this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
+        }
+        
+        if (savedMandatoryVacations) {
+            this.mandatoryVacations = JSON.parse(savedMandatoryVacations);
+        } else {
+            this.mandatoryVacations = {};
+        }
     }
 
     loadTheme() {
@@ -138,6 +156,8 @@ class ScheduleManager {
         localStorage.setItem('scheduleManager_employees', JSON.stringify(this.employees));
         localStorage.setItem('scheduleManager_schedules', JSON.stringify(this.schedules));
         localStorage.setItem('scheduleManager_departments', JSON.stringify(this.departments));
+        localStorage.setItem('scheduleManager_holidays', JSON.stringify(this.holidays));
+        localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify(this.mandatoryVacations));
         try {
             if (window.cloudSyncSave) {
                 window.cloudSyncSave();
@@ -259,6 +279,39 @@ class ScheduleManager {
                 defaultStartTime: '08:00',
                 defaultEndTime: '16:00'
             }
+        ];
+    }
+
+    getDefaultHolidaysForYear(year) {
+        // Note: Some dates vary by year (Easter, etc.) - using approximate dates for 2023
+        // In a production system, you would calculate these dates properly
+        return [
+            // New Year's Day
+            { id: this.generateId(), date: `${year}-01-01`, name: 'Újév', type: 'holiday' },
+            // National Holiday (March 15)
+            { id: this.generateId(), date: `${year}-03-15`, name: 'Nemzeti ünnep', type: 'holiday' },
+            // Good Friday (varies by year - approximate for 2023)
+            { id: this.generateId(), date: `${year}-04-07`, name: 'Nagypéntek', type: 'holiday' },
+            // Easter Sunday (varies by year - approximate for 2023)
+            { id: this.generateId(), date: `${year}-04-09`, name: 'Húsvétvasárnap', type: 'holiday' },
+            // Easter Monday (varies by year - approximate for 2023)
+            { id: this.generateId(), date: `${year}-04-10`, name: 'Húsvéthétfő', type: 'holiday' },
+            // Labor Day (May 1)
+            { id: this.generateId(), date: `${year}-05-01`, name: 'A munka ünnepe', type: 'holiday' },
+            // Whit Sunday (varies by year - approximate for 2023)
+            { id: this.generateId(), date: `${year}-05-28`, name: 'Pünkösdvasárnap', type: 'holiday' },
+            // Whit Monday (varies by year - approximate for 2023)
+            { id: this.generateId(), date: `${year}-05-29`, name: 'Pünkösdhétfő', type: 'holiday' },
+            // State Foundation Day (August 20)
+            { id: this.generateId(), date: `${year}-08-20`, name: 'Az államalapítás ünnepe', type: 'holiday' },
+            // National Day (October 23)
+            { id: this.generateId(), date: `${year}-10-23`, name: 'Nemzeti ünnep', type: 'holiday' },
+            // All Saints' Day (November 1)
+            { id: this.generateId(), date: `${year}-11-01`, name: 'Mindenszentek', type: 'holiday' },
+            // Christmas Day (December 25)
+            { id: this.generateId(), date: `${year}-12-25`, name: 'Karácsony', type: 'holiday' },
+            // Second Day of Christmas (December 26)
+            { id: this.generateId(), date: `${year}-12-26`, name: 'Karácsony másnapja', type: 'holiday' }
         ];
     }
 
@@ -524,15 +577,33 @@ avigation
 
     navigateWeek(direction) {
         const current = new Date(this.currentWeek + 'T00:00:00');
+        const oldYear = current.getFullYear();
+        
         if (direction === 'next') {
             current.setDate(current.getDate() + 7);
         } else if (direction === 'prev') {
             current.setDate(current.getDate() - 7);
         }
         this.currentWeek = this.formatDate(current);
+        
+        // Check if year has changed and update holiday manager if needed
+        const newYear = current.getFullYear();
+        if (oldYear !== newYear) {
+            this.switchToYear(newYear);
+            
+            // If the holiday modal is open, update its display
+            const holidayModal = document.getElementById('holidayModal');
+            if (holidayModal && holidayModal.classList.contains('active')) {
+                this.updateHolidayModalTitle();
+                this.renderHolidayList();
+                this.renderMandatoryVacationList();
+            }
+        }
     }
 
     navigateMonth(direction) {
+        const oldYear = this.currentMonth.year;
+        
         if (direction === 'next') {
             this.currentMonth.month++;
             if (this.currentMonth.month > 11) {
@@ -544,6 +615,19 @@ avigation
             if (this.currentMonth.month < 0) {
                 this.currentMonth.month = 11;
                 this.currentMonth.year--;
+            }
+        }
+        
+        // Check if year has changed and update holiday manager if needed
+        if (oldYear !== this.currentMonth.year) {
+            this.switchToYear(this.currentMonth.year);
+            
+            // If the holiday modal is open, update its display
+            const holidayModal = document.getElementById('holidayModal');
+            if (holidayModal && holidayModal.classList.contains('active')) {
+                this.updateHolidayModalTitle();
+                this.renderHolidayList();
+                this.renderMandatoryVacationList();
             }
         }
     }
@@ -765,7 +849,7 @@ avigation
         
         activeEmployees.forEach(employee => {
             const card = document.createElement('div');
-            card.className = `employee-card-with-pic ${employee.color} cursor-move`;
+            card.className = `employee-card-with-pic custom-styled-employee-card cursor-move`;
             card.draggable = true;
             card.dataset.employeeId = employee.id;
             
@@ -773,50 +857,58 @@ avigation
             card.style.backgroundColor = 'transparent';
             card.style.borderWidth = '1px';
             card.style.borderStyle = 'solid';
+            card.style.color = this.isDarkMode ? '#ffffff' : '#000000';
             
-            // Ensure employee has customColor property (for backward compatibility)
-            if (!employee.hasOwnProperty('customColor')) {
-                employee.customColor = null;
-            }
-            
+            // Determine the color to use for the profile icon and border
+            let borderColor = '#3b82f6'; // Default color
             if (employee.customColor) {
-                card.style.borderColor = employee.customColor;
+                borderColor = employee.customColor;
             } else {
                 // Use default color scheme based on employee.color class
                 switch (employee.color) {
                     case 'color-1':
-                        card.style.borderColor = '#3b82f6';
+                        borderColor = '#3b82f6';
                         break;
                     case 'color-2':
-                        card.style.borderColor = '#10b981';
+                        borderColor = '#10b981';
                         break;
                     case 'color-3':
-                        card.style.borderColor = '#8b5cf6';
+                        borderColor = '#8b5cf6';
                         break;
                     case 'color-4':
-                        card.style.borderColor = '#f59e0b';
+                        borderColor = '#f59e0b';
                         break;
                     case 'color-5':
-                        card.style.borderColor = '#ef4444';
+                        borderColor = '#ef4444';
                         break;
                     case 'color-6':
-                        card.style.borderColor = '#a855f7';
+                        borderColor = '#a855f7';
                         break;
                     case 'color-7':
-                        card.style.borderColor = '#059669';
+                        borderColor = '#059669';
                         break;
                     case 'color-8':
-                        card.style.borderColor = '#ec4899';
+                        borderColor = '#ec4899';
                         break;
-                    default:
-                        card.style.borderColor = '#3b82f6';
                 }
             }
             
+            card.style.borderColor = borderColor;
+            
+            // Add profile icon with the same color
+            const profileIconHtml = employee.profilePic ? 
+                `<img src="${employee.profilePic}" alt="${this.getEmployeeDisplayName(employee)}" class="w-8 h-8 rounded-full object-cover mr-3" style="border: 2px solid ${borderColor};">` :
+                `<div class="w-8 h-8 rounded-full flex items-center justify-center mr-3" style="border: 2px solid ${borderColor}; background-color: ${borderColor}20;">
+                    <i data-feather="user" class="w-4 h-4" style="color: ${borderColor};"></i>
+                </div>`;
+            
             card.innerHTML = `
-                <div class="employee-info">
-                    <div class="employee-name">${this.getEmployeeDisplayName(employee)}</div>
-                    <div class="employee-position">${employee.position}</div>
+                <div class="flex items-center">
+                    ${profileIconHtml}
+                    <div class="employee-info">
+                        <div class="employee-name">${this.getEmployeeDisplayName(employee)}</div>
+                        <div class="employee-position">${employee.position}</div>
+                    </div>
                 </div>
             `;
             
@@ -872,13 +964,37 @@ avigation
             // Add today class to the day column for highlighting
             dayColumn.className = `day-column ${isToday ? 'today' : ''}`;
             
+            // Check if this day is a holiday or mandatory vacation
+            const dateStr = this.formatDate(date);
+            const isHoliday = this.isHoliday(dateStr);
+            const isMandatoryVacation = this.isMandatoryVacation(dateStr);
+            let holidayName = '';
+            
+            if (isHoliday) {
+                const holidayInfo = this.getHolidayInfo(dateStr);
+                holidayName = holidayInfo.name;
+            } else if (isMandatoryVacation) {
+                const mvInfo = this.getMandatoryVacationInfo(dateStr);
+                holidayName = mvInfo.name;
+            }
+            
             // Day header
             const header = document.createElement('div');
-            header.className = `day-column-header ${isToday ? 'bg-blue-50 border-blue-200' : ''}`;
-            header.innerHTML = `
-                <div class="day-column-title ${isToday ? 'text-blue-700' : ''}">${day}</div>
-                <div class="day-column-date ${isToday ? 'text-blue-600' : ''}">${this.formatDateDisplay(date)}</div>
-            `;
+            header.className = `day-column-header ${isToday ? 'bg-blue-50 border-blue-200' : ''} ${isHoliday || isMandatoryVacation ? 'holiday-highlight' : ''}`;
+            
+            if (isHoliday || isMandatoryVacation) {
+                header.innerHTML = `
+                    <div class="day-column-title ${isToday ? 'text-blue-700' : 'text-red-600'} font-bold">${day}</div>
+                    <div class="day-column-date ${isToday ? 'text-blue-600' : 'text-red-500'} text-sm">${this.formatDateDisplay(date)}</div>
+                    <div class="holiday-name text-red-600 text-xs font-bold mt-1">${holidayName}</div>
+                `;
+            } else {
+                header.innerHTML = `
+                    <div class="day-column-title ${isToday ? 'text-blue-700' : ''}">${day}</div>
+                    <div class="day-column-date ${isToday ? 'text-blue-600' : ''}">${this.formatDateDisplay(date)}</div>
+                `;
+            }
+            
             dayColumn.appendChild(header);
             
             // Day content
@@ -889,6 +1005,9 @@ avigation
             // Add existing shifts for this day
             const dayShifts = this.getShiftsForDay(weekDates[index]);
             dayShifts.sort((a, b) => this.parseTime(a.startTime) - this.parseTime(b.startTime));
+            
+            // We'll handle holiday/mandatory vacation display in the day header instead of a card
+            // So we don't need to check for holidays here anymore
             
             dayShifts.forEach(shift => {
                 const shiftElement = this.createDayShift(shift);
@@ -1166,9 +1285,41 @@ avigation
                 dayCell.classList.add('today');
             }
             
+            const dateStr = this.formatDate(date);
+            
+            // Check if this day is a holiday or mandatory vacation
+            const isHoliday = this.isHoliday(dateStr);
+            const isMandatoryVacation = this.isMandatoryVacation(dateStr);
+            let holidayName = '';
+            
+            if (isHoliday) {
+                const holidayInfo = this.getHolidayInfo(dateStr);
+                holidayName = holidayInfo.name;
+            } else if (isMandatoryVacation) {
+                const mvInfo = this.getMandatoryVacationInfo(dateStr);
+                holidayName = mvInfo.name;
+            }
+            
+            // Create a container for the day header
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-header-container';
+            dayHeader.style.display = 'flex';
+            dayHeader.style.alignItems = 'center';
+            dayHeader.style.justifyContent = 'space-between';
+            dayHeader.style.marginBottom = '5px';
+            
+            // Create day number element
             const dayNumber = document.createElement('div');
             dayNumber.className = 'day-number';
             dayNumber.textContent = date.getDate();
+            dayNumber.style.fontWeight = 'bold';
+            
+            // Highlight the day number if it's a holiday or mandatory vacation
+            if (isHoliday || isMandatoryVacation) {
+                dayNumber.style.color = '#dc2626'; // red color for holidays
+                dayNumber.style.fontWeight = 'bold';
+            }
+            
             // Prevent dragging and selecting day numbers
             dayNumber.style.pointerEvents = 'none';
             dayNumber.style.userSelect = 'none';
@@ -1176,11 +1327,27 @@ avigation
             dayNumber.style.mozUserSelect = 'none';
             dayNumber.style.msUserSelect = 'none';
             dayNumber.draggable = false;
-            dayCell.appendChild(dayNumber);
+            
+            // Create holiday name element (if applicable)
+            const holidayNameElement = document.createElement('div');
+            holidayNameElement.className = 'holiday-name';
+            holidayNameElement.textContent = holidayName;
+            // Add title attribute for full name display on hover
+            holidayNameElement.title = holidayName;
+            
+            // Add elements to day header container
+            dayHeader.appendChild(dayNumber);
+            
+            // Only add holiday name if there is one
+            if (holidayName) {
+                dayHeader.appendChild(holidayNameElement);
+            }
+            
+            dayCell.appendChild(dayHeader);
             
             // Add shifts for this day
-            const dateStr = this.formatDate(date);
             const dayShifts = this.getShiftsForDay(dateStr);
+            
             dayShifts.forEach(shift => {
                 const shiftCard = this.createShiftCard(shift, true);
                 dayCell.appendChild(shiftCard);
@@ -1327,6 +1494,43 @@ avigation
             }
             return this.schedules[weekKey][date];
         }
+    }
+
+    // Check if a date is a holiday or mandatory vacation
+    isHoliday(date) {
+        const year = new Date(date).getFullYear();
+        if (!this.holidays[year]) {
+            // Initialize holidays for this year if they don't exist
+            this.holidays[year] = this.getDefaultHolidaysForYear(year);
+            this.saveData();
+        }
+        return this.holidays[year].some(holiday => holiday.date === date);
+    }
+
+    isMandatoryVacation(date) {
+        const year = new Date(date).getFullYear();
+        if (!this.mandatoryVacations[year]) {
+            this.mandatoryVacations[year] = [];
+        }
+        return this.mandatoryVacations[year].some(mv => mv.date === date);
+    }
+
+    getHolidayInfo(date) {
+        const year = new Date(date).getFullYear();
+        if (!this.holidays[year]) {
+            // Initialize holidays for this year if they don't exist
+            this.holidays[year] = this.getDefaultHolidaysForYear(year);
+            this.saveData();
+        }
+        return this.holidays[year].find(holiday => holiday.date === date);
+    }
+
+    getMandatoryVacationInfo(date) {
+        const year = new Date(date).getFullYear();
+        if (!this.mandatoryVacations[year]) {
+            this.mandatoryVacations[year] = [];
+        }
+        return this.mandatoryVacations[year].find(mv => mv.date === date);
     }
 
     createShiftCard(shift, compact = false) {
@@ -1494,6 +1698,12 @@ avigation
                     const employee = this.employees.find(emp => String(emp.id) === employeeId);
                     
                     if (employee) {
+                        // Check if employee already has a shift on this date
+                        if (this.hasEmployeeShiftOnDate(employeeId, targetDate)) {
+                            this.showNotification(`${this.getEmployeeDisplayName(employee)} már rendelkezik műszakkal ezen a napon!`, 'error');
+                            return;
+                        }
+                        
                         const start = employee.defaultStartTime || '08:00';
                         const end = employee.defaultEndTime || '16:00';
                         const shift = {
@@ -1547,6 +1757,13 @@ avigation
                         
                         if (!slotDate || !this.isValidDate(slotDate)) {
                             evt.item.remove();
+                            return;
+                        }
+                        
+                        // Check if employee already has a shift on this date
+                        if (this.hasEmployeeShiftOnDate(employeeId, slotDate)) {
+                            evt.item.remove();
+                            this.showNotification(`${this.getEmployeeDisplayName(employee)} már rendelkezik műszakkal ezen a napon!`, 'error');
                             return;
                         }
                         
@@ -1615,6 +1832,47 @@ avigation
         
         this.schedules[weekKey][shift.date].push(shift);
         this.saveData();
+    }
+
+    // New function to check if an employee already has a shift on a specific date
+    hasEmployeeShiftOnDate(employeeId, date) {
+        // Check all weeks for shifts on this date for this employee
+        for (const weekKey in this.schedules) {
+            if (this.schedules[weekKey] && this.schedules[weekKey][date]) {
+                const shifts = this.schedules[weekKey][date];
+                for (const shift of shifts) {
+                    if (String(shift.employeeId) === String(employeeId)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // New function to check if a new shift would overlap with existing shifts for the same employee
+    checkShiftOverlap(employeeId, date, startTime, endTime) {
+        // Check all weeks for shifts on this date for this employee
+        for (const weekKey in this.schedules) {
+            if (this.schedules[weekKey] && this.schedules[weekKey][date]) {
+                const shifts = this.schedules[weekKey][date];
+                for (const shift of shifts) {
+                    if (String(shift.employeeId) === String(employeeId)) {
+                        // Check if time ranges overlap
+                        const existingStart = this.parseTime(shift.startTime);
+                        const existingEnd = this.parseTime(shift.endTime);
+                        const newStart = this.parseTime(startTime);
+                        const newEnd = this.parseTime(endTime);
+                        
+                        // Overlap occurs if: (StartA < EndB) and (EndA > StartB)
+                        if (newStart < existingEnd && newEnd > existingStart) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     moveShiftToDate(shiftId, originalDate, targetDate) {
@@ -1758,6 +2016,37 @@ avigation
         delete modal.dataset.originalType;
     }
 
+    // New function to check if a new shift would overlap with existing shifts for the same employee
+    checkShiftOverlap(employeeId, date, startTime, endTime, excludeShiftId = null) {
+        // Check all weeks for shifts on this date for this employee
+        for (const weekKey in this.schedules) {
+            if (this.schedules[weekKey] && this.schedules[weekKey][date]) {
+                const shifts = this.schedules[weekKey][date];
+                for (const shift of shifts) {
+                    // Skip the shift we're editing (if specified)
+                    if (excludeShiftId && shift.id === excludeShiftId) {
+                        continue;
+                    }
+                    
+                    // Only check for the same employee
+                    if (String(shift.employeeId) === String(employeeId)) {
+                        // Check if time ranges overlap
+                        const existingStart = this.parseTime(shift.startTime);
+                        const existingEnd = this.parseTime(shift.endTime);
+                        const newStart = this.parseTime(startTime);
+                        const newEnd = this.parseTime(endTime);
+                        
+                        // Overlap occurs if: (StartA < EndB) and (EndA > StartB)
+                        if (newStart < existingEnd && newEnd > existingStart) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     saveShift() {
         const form = document.getElementById('shiftForm');
         const formData = new FormData(form);
@@ -1773,6 +2062,38 @@ avigation
         if (!employeeId || !startTime || !endTime || !position) {
             this.showNotification('Kérjük, tölts ki minden kötelező mezőt', 'error');
             return;
+        }
+        
+        // Check if this employee already has a shift on this date (for regular shifts)
+        if (type === 'regular') {
+            // If we're editing an existing shift, we only check if we're changing the employee or date
+            if (this.editingShift) {
+                // If employee or date changed, check for existing shifts
+                if ((this.editingShift.employeeId !== employeeId) || (this.editingShift.date !== date)) {
+                    if (this.hasEmployeeShiftOnDate(employeeId, date)) {
+                        const employee = this.employees.find(emp => String(emp.id) === String(employeeId));
+                        const employeeName = this.getEmployeeDisplayName(employee);
+                        this.showNotification(`${employeeName} már rendelkezik műszakkal ezen a napon!`, 'error');
+                        return;
+                    }
+                } else {
+                    // Same employee and date, check for time overlap with other shifts (excluding the one being edited)
+                    if (this.checkShiftOverlap(employeeId, date, startTime, endTime, this.editingShift.id)) {
+                        const employee = this.employees.find(emp => String(emp.id) === String(employeeId));
+                        const employeeName = this.getEmployeeDisplayName(employee);
+                        this.showNotification(`${employeeName} már rendelkezik műszakkal ezen a napon, ami átfedésben van az új műszakkal!`, 'error');
+                        return;
+                    }
+                }
+            } else {
+                // Adding a new shift, check if employee already has a shift on this date
+                if (this.hasEmployeeShiftOnDate(employeeId, date)) {
+                    const employee = this.employees.find(emp => String(emp.id) === String(employeeId));
+                    const employeeName = this.getEmployeeDisplayName(employee);
+                    this.showNotification(`${employeeName} már rendelkezik műszakkal ezen a napon!`, 'error');
+                    return;
+                }
+            }
         }
         
         const shift = {
@@ -1911,14 +2232,48 @@ avigation
         tbody.innerHTML = '';
         
         this.employees.forEach(employee => {
+            // Determine the color to use for the profile icon
+            let profileIconColor = '#3b82f6'; // Default color
+            if (employee.customColor) {
+                profileIconColor = employee.customColor;
+            } else {
+                // Use default color scheme based on employee.color class
+                switch (employee.color) {
+                    case 'color-1':
+                        profileIconColor = '#3b82f6';
+                        break;
+                    case 'color-2':
+                        profileIconColor = '#10b981';
+                        break;
+                    case 'color-3':
+                        profileIconColor = '#8b5cf6';
+                        break;
+                    case 'color-4':
+                        profileIconColor = '#f59e0b';
+                        break;
+                    case 'color-5':
+                        profileIconColor = '#ef4444';
+                        break;
+                    case 'color-6':
+                        profileIconColor = '#a855f7';
+                        break;
+                    case 'color-7':
+                        profileIconColor = '#059669';
+                        break;
+                    case 'color-8':
+                        profileIconColor = '#ec4899';
+                        break;
+                }
+            }
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
-                        <div class="w-8 h-8 rounded-full ${employee.color} flex items-center justify-center mr-3 overflow-hidden">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 overflow-hidden" style="border: 2px solid ${profileIconColor};">
                             ${employee.profilePic ? 
                                 `<img src="${employee.profilePic}" alt="${this.getEmployeeDisplayName(employee)}" class="w-full h-full object-cover">` :
-                                `<i data-feather="user" class="w-4 h-4"></i>`
+                                `<i data-feather="user" class="w-4 h-4" style="color: ${profileIconColor};"></i>`
                             }
                         </div>
                         <div>
@@ -4134,6 +4489,319 @@ avigation
         }
     }
 
+    // Holiday Management
+    openHolidayModal() {
+        const modal = document.getElementById('holidayModal');
+        this.renderHolidayList();
+        this.renderMandatoryVacationList();
+        this.updateHolidayModalTitle();
+        
+        modal.classList.add('active');
+        
+        // Hide both forms when modal opens
+        document.getElementById('holidayForm').classList.add('hidden');
+        document.getElementById('mandatoryVacationForm').classList.add('hidden');
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    closeHolidayModal() {
+        document.getElementById('holidayModal').classList.remove('active');
+    }
+
+    previousYear() {
+        this.currentYear--;
+        this.updateHolidayModalTitle();
+        this.renderHolidayList();
+        this.renderMandatoryVacationList();
+        // Initialize holidays for the new year if they don't exist
+        if (!this.holidays[this.currentYear]) {
+            this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
+        }
+        if (!this.mandatoryVacations[this.currentYear]) {
+            this.mandatoryVacations[this.currentYear] = [];
+        }
+        this.saveData();
+    }
+
+    nextYear() {
+        this.currentYear++;
+        this.updateHolidayModalTitle();
+        this.renderHolidayList();
+        this.renderMandatoryVacationList();
+        // Initialize holidays for the new year if they don't exist
+        if (!this.holidays[this.currentYear]) {
+            this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
+        }
+        if (!this.mandatoryVacations[this.currentYear]) {
+            this.mandatoryVacations[this.currentYear] = [];
+        }
+        this.saveData();
+    }
+
+    // Method to handle year changes from the main timetable
+    switchToYear(year) {
+        this.currentYear = year;
+        this.updateHolidayModalTitle();
+        this.renderHolidayList();
+        this.renderMandatoryVacationList();
+        // Initialize holidays for the new year if they don't exist
+        if (!this.holidays[this.currentYear]) {
+            this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
+        }
+        if (!this.mandatoryVacations[this.currentYear]) {
+            this.mandatoryVacations[this.currentYear] = [];
+        }
+        this.saveData();
+    }
+
+    updateHolidayModalTitle() {
+        const titleElement = document.getElementById('holidayModalTitle');
+        if (titleElement) {
+            titleElement.textContent = `Ünnepnapok és Kötelező Szabadságok Kezelése (${this.currentYear})`;
+        }
+    }
+
+    showHolidayForm() {
+        // Hide both forms first
+        document.getElementById('holidayForm').classList.add('hidden');
+        document.getElementById('mandatoryVacationForm').classList.add('hidden');
+        
+        // Show holiday form
+        document.getElementById('holidayForm').classList.remove('hidden');
+    }
+
+    showMandatoryVacationForm() {
+        // Hide both forms first
+        document.getElementById('holidayForm').classList.add('hidden');
+        document.getElementById('mandatoryVacationForm').classList.add('hidden');
+        
+        // Show mandatory vacation form
+        document.getElementById('mandatoryVacationForm').classList.remove('hidden');
+    }
+
+    addHoliday() {
+        const dateInput = document.getElementById('holidayDate');
+        const nameInput = document.getElementById('holidayName');
+        
+        const date = dateInput.value;
+        const name = nameInput.value.trim();
+        
+        if (!date || !name) {
+            this.showNotification('Kérjük, adja meg a dátumot és a nevet', 'warning');
+            return;
+        }
+        
+        const year = new Date(date).getFullYear();
+        
+        // Initialize holidays for this year if they don't exist
+        if (!this.holidays[year]) {
+            this.holidays[year] = this.getDefaultHolidaysForYear(year);
+        }
+        
+        // Check if holiday already exists
+        const existingHoliday = this.holidays[year].find(h => h.date === date);
+        if (existingHoliday) {
+            this.showNotification('Ez a dátum már ünnepnapként szerepel', 'warning');
+            return;
+        }
+        
+        const holiday = {
+            id: this.generateId(),
+            date: date,
+            name: name,
+            type: 'holiday'
+        };
+        
+        this.holidays[year].push(holiday);
+        this.saveData();
+        this.renderHolidayList();
+        
+        // Clear inputs
+        dateInput.value = '';
+        nameInput.value = '';
+        
+        this.showNotification('Ünnepnap sikeresen hozzáadva', 'success');
+    }
+
+    addMandatoryVacation() {
+        const dateInput = document.getElementById('mandatoryVacationDate');
+        const nameInput = document.getElementById('mandatoryVacationName');
+        
+        const date = dateInput.value;
+        const name = nameInput.value.trim();
+        
+        if (!date || !name) {
+            this.showNotification('Kérjük, adja meg a dátumot és a nevet', 'warning');
+            return;
+        }
+        
+        const year = new Date(date).getFullYear();
+        
+        // Initialize mandatory vacations for this year if they don't exist
+        if (!this.mandatoryVacations[year]) {
+            this.mandatoryVacations[year] = [];
+        }
+        
+        // Check if mandatory vacation already exists
+        const existingMandatoryVacation = this.mandatoryVacations[year].find(mv => mv.date === date);
+        if (existingMandatoryVacation) {
+            this.showNotification('Ez a dátum már kötelező szabadságként szerepel', 'warning');
+            return;
+        }
+        
+        const mandatoryVacation = {
+            id: this.generateId(),
+            date: date,
+            name: name,
+            type: 'mandatory_vacation'
+        };
+        
+        this.mandatoryVacations[year].push(mandatoryVacation);
+        this.saveData();
+        this.renderMandatoryVacationList();
+        
+        // Clear inputs
+        dateInput.value = '';
+        nameInput.value = '';
+        
+        this.showNotification('Kötelező szabadság sikeresen hozzáadva', 'success');
+    }
+
+    deleteHoliday(id) {
+        this.showConfirmation(
+            'Ünnepnap Törlése',
+            'Biztosan törölni szeretné ezt az ünnepnapot?',
+            () => {
+                // Find and remove holiday from the current year
+                const currentYear = this.currentYear;
+                if (this.holidays[currentYear]) {
+                    this.holidays[currentYear] = this.holidays[currentYear].filter(holiday => holiday.id !== id);
+                    this.saveData();
+                    this.renderHolidayList();
+                    this.showNotification('Ünnepnap sikeresen törölve', 'success');
+                }
+            }
+        );
+    }
+
+    deleteMandatoryVacation(id) {
+        this.showConfirmation(
+            'Kötelező Szabadság Törlése',
+            'Biztosan törölni szeretné ezt a kötelező szabadságot?',
+            () => {
+                // Find and remove mandatory vacation from the current year
+                const currentYear = this.currentYear;
+                if (this.mandatoryVacations[currentYear]) {
+                    this.mandatoryVacations[currentYear] = this.mandatoryVacations[currentYear].filter(mv => mv.id !== id);
+                    this.saveData();
+                    this.renderMandatoryVacationList();
+                    this.showNotification('Kötelező szabadság sikeresen törölve', 'success');
+                }
+            }
+        );
+    }
+
+    renderHolidayList() {
+        const container = document.getElementById('holidayList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        // Initialize holidays for current year if they don't exist
+        if (!this.holidays[this.currentYear]) {
+            this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
+        }
+        
+        if (this.holidays[this.currentYear].length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-4">Nincs hozzáadva ünnepnap</div>';
+            return;
+        }
+        
+        // Sort holidays by date
+        const sortedHolidays = [...this.holidays[this.currentYear]].sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        sortedHolidays.forEach(holiday => {
+            const holidayItem = document.createElement('div');
+            holidayItem.className = 'flex justify-between items-center p-2 bg-gray-50 rounded mb-2';
+            
+            const date = new Date(holiday.date);
+            const formattedDate = date.toLocaleDateString('hu-HU', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            holidayItem.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">${holiday.name}</div>
+                    <div class="text-sm text-gray-600 truncate">${formattedDate}</div>
+                </div>
+                <button onclick="scheduleManager.deleteHoliday('${holiday.id}')" 
+                    class="text-red-600 hover:text-red-800 p-1 flex-shrink-0">
+                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                </button>
+            `;
+            
+            container.appendChild(holidayItem);
+        });
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    renderMandatoryVacationList() {
+        const container = document.getElementById('mandatoryVacationList');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        // Initialize mandatory vacations for current year if they don't exist
+        if (!this.mandatoryVacations[this.currentYear]) {
+            this.mandatoryVacations[this.currentYear] = [];
+        }
+        
+        if (this.mandatoryVacations[this.currentYear].length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-4">Nincs hozzáadva kötelező szabadság</div>';
+            return;
+        }
+        
+        // Sort mandatory vacations by date
+        const sortedMandatoryVacations = [...this.mandatoryVacations[this.currentYear]].sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        sortedMandatoryVacations.forEach(mv => {
+            const mvItem = document.createElement('div');
+            mvItem.className = 'flex justify-between items-center p-2 bg-gray-50 rounded mb-2';
+            
+            const date = new Date(mv.date);
+            const formattedDate = date.toLocaleDateString('hu-HU', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            mvItem.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">${mv.name}</div>
+                    <div class="text-sm text-gray-600 truncate">${formattedDate}</div>
+                </div>
+                <button onclick="scheduleManager.deleteMandatoryVacation('${mv.id}')" 
+                    class="text-red-600 hover:text-red-800 p-1 flex-shrink-0">
+                    <i data-feather="trash-2" class="w-4 h-4"></i>
+                </button>
+            `;
+            
+            container.appendChild(mvItem);
+        });
+        
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
     closeDepartmentModal() {
         document.getElementById('departmentModal').classList.remove('active');
     }
@@ -4497,6 +5165,39 @@ function closeDepartmentModal() {
 
 function addDepartment() {
     scheduleManager.addDepartment();
+}
+
+// Global functions for holiday management
+function openHolidayModal() {
+    scheduleManager.openHolidayModal();
+}
+
+function closeHolidayModal() {
+    scheduleManager.closeHolidayModal();
+}
+
+function showHolidayForm() {
+    scheduleManager.showHolidayForm();
+}
+
+function showMandatoryVacationForm() {
+    scheduleManager.showMandatoryVacationForm();
+}
+
+function addHoliday() {
+    scheduleManager.addHoliday();
+}
+
+function addMandatoryVacation() {
+    scheduleManager.addMandatoryVacation();
+}
+
+function previousYear() {
+    scheduleManager.previousYear();
+}
+
+function nextYear() {
+    scheduleManager.nextYear();
 }
 
 // Global function for profile picture handling
