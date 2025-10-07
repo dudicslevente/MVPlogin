@@ -58,6 +58,38 @@ async function loadProfileDataAfterSignup() {
   }
 }
 
+// Function to load profile data into localStorage
+async function loadProfileDataIntoLocalStorage() {
+  try {
+    const session = await getSession();
+    if (!session) return;
+    
+    const userId = session.user.id;
+    const { data, error } = await window.supabaseClient
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error loading profile data:', error);
+      return;
+    }
+    
+    // Store profile data in localStorage
+    if (data) {
+      if (data.username) {
+        localStorage.setItem('scheduleManager_username', data.username);
+      }
+      if (data.display_name) {
+        localStorage.setItem('scheduleManager_displayName', data.display_name);
+      }
+    }
+  } catch (err) {
+    console.error('Error in loadProfileDataIntoLocalStorage:', err);
+  }
+}
+
 async function signInWithEmail(email, password) {
   const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -105,6 +137,9 @@ async function loadAppStateAndSync() {
     }
     await cloudSyncSave();
   }
+  
+  // Also load profile data and store in localStorage
+  await loadProfileDataIntoLocalStorage();
 }
 
 async function cloudSyncSave() {
@@ -150,6 +185,7 @@ window.signOut = signOut;
 window.getSession = getSession;
 window.uploadProfileAvatar = uploadProfileAvatar;
 window.loadProfileDataAfterSignup = loadProfileDataAfterSignup;
+window.loadProfileDataIntoLocalStorage = loadProfileDataIntoLocalStorage;
 
 // Convenience: logout and redirect to login
 window.logoutUser = async function() {
