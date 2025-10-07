@@ -102,9 +102,7 @@
         const res = await signUpWithEmail(email, password, username);
         if (res && res.session) {
           // Email confirmation disabled: already signed in
-          // Load profile data to ensure it's available in the app
-          await loadProfileDataAfterSignup();
-          // Add a small delay to ensure profile update completes
+          // Add a delay to ensure profile update is initiated
           await new Promise(resolve => setTimeout(resolve, 500));
           window.location.href = 'index.html';
         } else {

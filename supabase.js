@@ -14,23 +14,25 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
-  // Always attempt to update profile with the username, regardless of session status
+  // Attempt to update profile with the username after a delay
+  // This handles timing issues with the database trigger
   if (user && username) {
-    // Wait a moment for the trigger to create the profile
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update the profile with the username (the profile should already exist from the trigger)
-    const { error: updateError } = await window.supabaseClient
-      .from('profiles')
-      .update({ username, display_name: username })
-      .eq('id', user.id);
-    
-    // If there's an error updating the profile, log it but don't throw
-    // as we want the signup to succeed even if profile update fails
-    if (updateError) {
-      console.error('Profile update error:', updateError);
-      // Don't throw the error to avoid breaking the signup flow
-    }
+    // Use a timeout to handle potential timing issues with the trigger
+    setTimeout(async () => {
+      try {
+        // Update the profile with the username
+        const { error: updateError } = await window.supabaseClient
+          .from('profiles')
+          .update({ username, display_name: username })
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+        }
+      } catch (err) {
+        console.error('Error updating profile:', err);
+      }
+    }, 1000); // Delay to allow trigger to complete
   }
   return data;
 }
@@ -45,7 +47,7 @@ async function loadProfileDataAfterSignup() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5;
     let data, error;
     
     do {
@@ -59,12 +61,12 @@ async function loadProfileDataAfterSignup() {
         console.error(`Error loading profile after signup (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      } else if (!data || (!data.username && !data.display_name)) {
-        // Profile exists but is empty, wait and retry
+      } else if (!data) {
+        // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } else {
         // Success, break out of loop
@@ -81,10 +83,10 @@ async function loadProfileDataAfterSignup() {
     
     // Store profile data in localStorage for immediate availability
     if (data) {
-      if (data.username) {
+      if (data.username && data.username !== '') {
         localStorage.setItem('scheduleManager_username', data.username);
       }
-      if (data.display_name) {
+      if (data.display_name && data.display_name !== '') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       }
     }
@@ -116,10 +118,10 @@ async function loadProfileDataIntoLocalStorage() {
     
     // Store profile data in localStorage
     if (data) {
-      if (data.username) {
+      if (data.username && data.username !== '') {
         localStorage.setItem('scheduleManager_username', data.username);
       }
-      if (data.display_name) {
+      if (data.display_name && data.display_name !== '') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       }
     }
