@@ -2,10 +2,10 @@
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  -- Create a profile with a unique username based on the user's ID
-  -- This avoids the uniqueness constraint violation
+  -- Create a profile with empty values that can be updated later
+  -- This avoids conflicts with the application's profile update logic
   insert into public.profiles (id, username, display_name)
-  values (new.id, 'user_' || new.id, 'User'); -- Temporary unique values
+  values (new.id, '', ''); -- Empty values that can be updated later
   return new;
 end;
 $$ language plpgsql security definer;

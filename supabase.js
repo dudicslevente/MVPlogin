@@ -23,32 +23,28 @@ async function signUpWithEmail(email, password, username) {
   }
   // Attempt to update profile with the username
   if (user && username) {
-    // Update the profile with the username immediately
-    // Use a slight delay to ensure auth is fully complete
-    setTimeout(async () => {
-      try {
-        // Update the profile with the username
-        // We don't need to wait for the trigger, we can directly update
-        const { error: updateError } = await window.supabaseClient
+    try {
+      // Update the profile with the username immediately
+      // We don't need to wait for the trigger, we can directly update
+      const { error: updateError } = await window.supabaseClient
+        .from('profiles')
+        .update({ username, display_name: username })
+        .eq('id', user.id);
+      
+      // If update fails (profile doesn't exist yet), try insert
+      if (updateError) {
+        const { error: insertError } = await window.supabaseClient
           .from('profiles')
-          .update({ username, display_name: username })
-          .eq('id', user.id);
+          .insert({ id: user.id, username, display_name: username })
+          .select();
         
-        // If update fails (profile doesn't exist yet), try insert
-        if (updateError) {
-          const { error: insertError } = await window.supabaseClient
-            .from('profiles')
-            .insert({ id: user.id, username, display_name: username })
-            .select();
-          
-          if (insertError) {
-            console.error('Profile creation error:', insertError);
-          }
+        if (insertError) {
+          console.error('Profile creation error:', insertError);
         }
-      } catch (err) {
-        console.error('Error updating profile:', err);
       }
-    }, 100); // Very short delay
+    } catch (err) {
+      console.error('Error updating profile:', err);
+    }
   }
   return data;
 }
