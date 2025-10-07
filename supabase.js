@@ -14,6 +14,7 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
+  
   // Store the username in localStorage immediately for immediate availability
   if (username) {
     localStorage.setItem('scheduleManager_username', username);
@@ -21,64 +22,83 @@ async function signUpWithEmail(email, password, username) {
     // Debug: Log the stored values
     console.log('Stored username in localStorage:', username);
   }
+  
   // Attempt to update profile with the username
   if (user && username) {
     // Use a more aggressive approach to ensure profile is updated
     // Try multiple times with different strategies
     const updateProfile = async (attempt) => {
-      if (attempt > 3) {
-        console.error('Failed to update profile after 3 attempts');
-        return;
+      if (attempt > 10) { // Increased attempts
+        console.error('Failed to update profile after 10 attempts');
+        throw new Error('Database error saving new user');
       }
       
       try {
-        // Wait a bit for auth to fully complete
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        // Wait a bit for auth to fully complete and trigger to run
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt)); // Increased delay
         
-        console.log(`Attempt ${attempt} to update profile`);
+        console.log(`Attempt ${attempt} to update profile for user:`, user.id);
         
-        // First try to update the existing profile
-        let { data: updateData, error: updateError } = await window.supabaseClient
+        // First, check if profile exists
+        const { data: profileCheck, error: profileCheckError } = await window.supabaseClient
           .from('profiles')
-          .update({ username, display_name: username })
+          .select('id, username')
           .eq('id', user.id)
-          .select();
-        
-        // Check if update was successful
-        if (!updateError && updateData && updateData.length > 0) {
-          console.log('Profile updated successfully');
-          return;
+          .maybeSingle();
+          
+        if (profileCheckError) {
+          console.error('Error checking profile existence:', profileCheckError);
+          throw profileCheckError;
         }
         
-        // If update failed, try insert (profile might not exist yet or have NULL values)
-        if (updateError || !updateData || updateData.length === 0) {
-          console.log('Update failed, trying insert:', updateError);
+        let resultData, resultError;
+        
+        if (profileCheck) {
+          // Profile exists, update it
+          console.log('Profile exists, updating...');
+          const { data: updateData, error: updateError } = await window.supabaseClient
+            .from('profiles')
+            .update({ username, display_name: username })
+            .eq('id', user.id)
+            .select();
+            
+          resultData = updateData;
+          resultError = updateError;
+        } else {
+          // Profile doesn't exist, create it
+          console.log('Profile does not exist, creating...');
           const { data: insertData, error: insertError } = await window.supabaseClient
             .from('profiles')
             .insert({ id: user.id, username, display_name: username })
             .select();
-          
-          if (!insertError && insertData && insertData.length > 0) {
-            console.log('Profile created successfully');
-            return;
-          } else if (insertError) {
-            console.error('Profile creation error:', insertError);
-            // Try again with a different approach
-            setTimeout(() => updateProfile(attempt + 1), 1000);
-          }
+            
+          resultData = insertData;
+          resultError = insertError;
+        }
+        
+        // Check if operation was successful
+        if (!resultError && resultData && resultData.length > 0) {
+          console.log('Profile operation successful:', resultData[0]);
+          return resultData[0];
         } else {
-          console.log('Profile updated successfully');
+          console.error('Profile operation failed:', resultError);
+          throw resultError || new Error('Profile operation failed');
         }
       } catch (err) {
         console.error(`Error updating profile (attempt ${attempt}):`, err);
         
+        // If it's the last attempt, rethrow the error
+        if (attempt >= 10) {
+          throw new Error('Database error saving new user: ' + (err.message || err));
+        }
+        
         // Try again
-        setTimeout(() => updateProfile(attempt + 1), 1000);
+        await new Promise(resolve => setTimeout(() => updateProfile(attempt + 1), 2500));
       }
     };
     
-    // Start the update process
-    setTimeout(() => updateProfile(1), 100);
+    // Start the update process and wait for it to complete
+    await updateProfile(1);
   }
   return data;
 }
@@ -93,7 +113,7 @@ async function loadProfileDataAfterSignup() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 10; // Increase attempts for login scenarios
+    const maxAttempts = 15; // Increase attempts for login scenarios
     let data, error;
     
     do {
@@ -107,23 +127,23 @@ async function loadProfileDataAfterSignup() {
         console.error(`Error loading profile (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-      } else if (data.username && data.username.startsWith('user_')) {
+      } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         // This might happen if the async update from signup hasn't completed yet
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } else if ((!data.username || data.username === '') && (!data.display_name || data.display_name === '')) {
         // Profile exists but is empty, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } else {
         // Success, break out of loop
@@ -144,16 +164,18 @@ async function loadProfileDataAfterSignup() {
       const existingUsername = localStorage.getItem('scheduleManager_username');
       const existingDisplayName = localStorage.getItem('scheduleManager_displayName');
       
-      if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
+      if (data.username && data.username !== '' && !data.username.startsWith('user_') && !data.username.startsWith('temp_')) {
         localStorage.setItem('scheduleManager_username', data.username);
-      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_')) {
+      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_') && !existingUsername.startsWith('temp_')) {
         // Keep existing username if database has a temporary one
+        localStorage.setItem('scheduleManager_username', existingUsername);
       }
       
       if (data.display_name && data.display_name !== '' && data.display_name !== 'User') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       } else if (existingDisplayName && existingDisplayName !== '' && existingDisplayName !== 'User') {
         // Keep existing display name if database has a temporary one
+        localStorage.setItem('scheduleManager_displayName', existingDisplayName);
       }
     }
     
@@ -188,17 +210,19 @@ async function loadProfileDataIntoLocalStorage() {
       const existingUsername = localStorage.getItem('scheduleManager_username');
       const existingDisplayName = localStorage.getItem('scheduleManager_displayName');
       
-      if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
+      if (data.username && data.username !== '' && !data.username.startsWith('user_') && !data.username.startsWith('temp_')) {
         localStorage.setItem('scheduleManager_username', data.username);
-      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_')) {
+      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_') && !existingUsername.startsWith('temp_')) {
         // Keep the existing username if database has a temporary one
         // This preserves the user's original input
+        localStorage.setItem('scheduleManager_username', existingUsername);
       }
       
       if (data.display_name && data.display_name !== '' && data.display_name !== 'User') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       } else if (existingDisplayName && existingDisplayName !== '' && existingDisplayName !== 'User') {
         // Keep the existing display name if database has a temporary one
+        localStorage.setItem('scheduleManager_displayName', existingDisplayName);
       }
     }
   } catch (err) {

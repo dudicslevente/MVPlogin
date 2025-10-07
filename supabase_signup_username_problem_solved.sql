@@ -1,15 +1,12 @@
--- First, modify the table to allow NULL values for username temporarily
--- This should be run in the Supabase SQL editor
--- ALTER TABLE public.profiles ALTER COLUMN username DROP NOT NULL;
-
 -- Function to automatically create a profile for new users
+-- This works with the existing schema that requires NOT NULL username
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  -- Create a profile with NULL values that can be updated later
-  -- This avoids conflicts with the application's profile update logic
+  -- Create a profile with a unique temporary username based on the user's ID
+  -- This avoids the uniqueness constraint violation while working with NOT NULL constraint
   insert into public.profiles (id, username, display_name)
-  values (new.id, NULL, NULL); -- NULL values that can be updated later
+  values (new.id, 'user_' || new.id, 'User'); -- Temporary unique values
   return new;
 end;
 $$ language plpgsql security definer;
