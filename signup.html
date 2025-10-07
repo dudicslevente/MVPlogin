@@ -75,7 +75,7 @@
 
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = e.target.querySelector('button[type=\"submit\"]');
+      const btn = e.target.querySelector('button[type="submit"]');
       btn.disabled = true; btn.textContent = 'Létrehozás...';
       const email = document.getElementById('email').value.trim().toLowerCase();
       const username = document.getElementById('username').value.trim();
@@ -101,6 +101,12 @@
       try {
         const res = await signUpWithEmail(email, password, username);
         
+        // Reset button immediately after signup attempt
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Fiók Létrehozása';
+        }
+        
         // Always show the confirmation message regardless of session status
         // This ensures the user knows what to expect
         infoBox.textContent = `Elküldünk egy megerősítő linket a következő címre: ${email}. Kérjük, ellenőrizd a postafiókod a fiók aktiválásához.`;
@@ -108,12 +114,6 @@
         
         // Force UI update
         infoBox.offsetHeight; // Trigger reflow
-        
-        // Also force the button to update immediately
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = 'Fiók Létrehozása';
-        }
         
         // Small delay to ensure UI updates are visible
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -127,6 +127,13 @@
           window.location.href = 'index.html';
         }
         // If email confirmation is required, we keep the user on the page with the info message
+        // The info message is already displayed above
+        
+        // Ensure button is reset in all cases
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Fiók Létrehozása';
+        }
       } catch (err) {
         // Provide more specific error messages
         let errorMessage = 'Regisztráció sikertelen';
@@ -155,8 +162,8 @@
         
         // Also log the full error object for debugging
         console.error('Full error object:', JSON.stringify(err, null, 2));
-      } finally {
-        // Ensure button is always reset
+        
+        // Reset button on error
         if (btn) {
           btn.disabled = false;
           btn.textContent = 'Fiók Létrehozása';
