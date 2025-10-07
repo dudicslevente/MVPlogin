@@ -113,53 +113,42 @@
       const session = await ensureSession();
       if (!session) return;
       const userId = session.user.id;
+      
+      // Always use the user-provided username from localStorage
+      // This ensures we never show the temporary database values
+      const localStorageUsername = localStorage.getItem('scheduleManager_username') || '';
+      const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName') || '';
+      
+      // Load profile data from database for other fields (avatar, etc.)
       const { data, error } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) {
         console.error(error);
       }
       const profile = data || {};
       
-      // Use localStorage values if available (they contain the user-provided username)
-      // Fall back to database values if localStorage is empty
-      const localStorageUsername = localStorage.getItem('scheduleManager_username');
-      const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName');
-      
-      const displayUsername = localStorageUsername || profile.username || '';
-      const displayName = localStorageDisplayName || profile.display_name || '';
-      
-      document.getElementById('username').value = displayUsername;
-      document.getElementById('displayName').value = displayName;
+      // Always display the user-provided username, never the database temporary values
+      document.getElementById('username').value = localStorageUsername;
+      document.getElementById('displayName').value = localStorageDisplayName;
       document.getElementById('avatarUrl').value = profile.avatar_url || '';
-      const preview = document.getElementById('avatarPreview');
-      const placeholder = document.getElementById('avatarPlaceholder');
+      
+      // Update avatar preview
+      const previewEl = document.getElementById('avatarPreview');
+      const placeholderEl = document.getElementById('avatarPlaceholder');
       if (profile.avatar_url) {
-        preview.src = profile.avatar_url;
-        preview.style.display = 'block';
-        if (placeholder) placeholder.style.display = 'none';
+        previewEl.src = profile.avatar_url;
+        previewEl.style.display = 'block';
+        if (placeholderEl) placeholderEl.style.display = 'none';
       } else {
-        preview.style.display = 'none';
-        if (placeholder) placeholder.style.display = 'block';
+        previewEl.style.display = 'none';
+        if (placeholderEl) placeholderEl.style.display = 'block';
       }
+      
       // Init currency select from localStorage (synced via app_state)
       try {
         const cur = localStorage.getItem('scheduleManager_currency') || 'Ft';
         const sel = document.getElementById('currencySelect');
         if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : 'Ft';
       } catch (_) {}
-      
-      // Also update localStorage with profile data for consistency
-      if (profile.username) {
-        // Only update localStorage if it doesn't already have a user-provided value
-        if (!localStorage.getItem('scheduleManager_username')) {
-          localStorage.setItem('scheduleManager_username', profile.username);
-        }
-      }
-      if (profile.display_name) {
-        // Only update localStorage if it doesn't already have a user-provided value
-        if (!localStorage.getItem('scheduleManager_displayName')) {
-          localStorage.setItem('scheduleManager_displayName', profile.display_name);
-        }
-      }
     }
 
     // Upload when a file is selected
