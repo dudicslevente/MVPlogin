@@ -118,9 +118,22 @@
         console.error(error);
       }
       const profile = data || {};
-      // Don't show temporary usernames that start with 'user_'
-      const displayUsername = (profile.username && !profile.username.startsWith('user_')) ? profile.username : '';
-      const displayName = (profile.display_name && !profile.display_name.startsWith('user_')) ? profile.display_name : '';
+      // Don't show temporary usernames that start with 'user_' or display_name that is 'User'
+      // Also check localStorage for user-provided values
+      const localStorageUsername = localStorage.getItem('scheduleManager_username');
+      const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName');
+      
+      const displayUsername = (profile.username && !profile.username.startsWith('user_')) ? 
+        profile.username : 
+        (localStorageUsername && !localStorageUsername.startsWith('user_')) ? 
+          localStorageUsername : 
+          '';
+      
+      const displayName = (profile.display_name && profile.display_name !== 'User') ? 
+        profile.display_name : 
+        (localStorageDisplayName && localStorageDisplayName !== 'User') ? 
+          localStorageDisplayName : 
+          '';
       document.getElementById('username').value = displayUsername;
       document.getElementById('displayName').value = displayName;
       document.getElementById('avatarUrl').value = profile.avatar_url || '';
@@ -142,10 +155,11 @@
       } catch (_) {}
       
       // Also update localStorage with profile data for consistency
-      if (profile.username) {
+      // But don't overwrite user-provided values with temporary ones
+      if (profile.username && !profile.username.startsWith('user_')) {
         localStorage.setItem('scheduleManager_username', profile.username);
       }
-      if (profile.display_name) {
+      if (profile.display_name && profile.display_name !== 'User') {
         localStorage.setItem('scheduleManager_displayName', profile.display_name);
       }
     }

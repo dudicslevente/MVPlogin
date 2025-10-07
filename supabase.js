@@ -50,7 +50,7 @@ async function signUpWithEmail(email, password, username) {
       } catch (err) {
         console.error('Error updating profile:', err);
       }
-    }, 1500); // Delay to allow trigger to complete
+    }, 1000); // Reduced delay to allow faster profile update
   }
   return data;
 }
@@ -111,12 +111,21 @@ async function loadProfileDataAfterSignup() {
     }
     
     // Store profile data in localStorage for immediate availability
+    // But preserve user-provided values over temporary database values
     if (data) {
+      const existingUsername = localStorage.getItem('scheduleManager_username');
+      const existingDisplayName = localStorage.getItem('scheduleManager_displayName');
+      
       if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
         localStorage.setItem('scheduleManager_username', data.username);
+      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_')) {
+        // Keep existing username if database has a temporary one
       }
-      if (data.display_name && data.display_name !== '' && !data.display_name.startsWith('user_')) {
+      
+      if (data.display_name && data.display_name !== '' && data.display_name !== 'User') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
+      } else if (existingDisplayName && existingDisplayName !== '' && existingDisplayName !== 'User') {
+        // Keep existing display name if database has a temporary one
       }
     }
     
@@ -147,11 +156,21 @@ async function loadProfileDataIntoLocalStorage() {
     
     // Store profile data in localStorage
     if (data) {
+      // Check if we have valid data, otherwise keep existing localStorage values
+      const existingUsername = localStorage.getItem('scheduleManager_username');
+      const existingDisplayName = localStorage.getItem('scheduleManager_displayName');
+      
       if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
         localStorage.setItem('scheduleManager_username', data.username);
+      } else if (existingUsername && existingUsername !== '' && !existingUsername.startsWith('user_')) {
+        // Keep the existing username if database has a temporary one
+        // This preserves the user's original input
       }
-      if (data.display_name && data.display_name !== '' && !data.display_name.startsWith('user_')) {
+      
+      if (data.display_name && data.display_name !== '' && data.display_name !== 'User') {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
+      } else if (existingDisplayName && existingDisplayName !== '' && existingDisplayName !== 'User') {
+        // Keep the existing display name if database has a temporary one
       }
     }
   } catch (err) {
