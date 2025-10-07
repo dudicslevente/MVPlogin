@@ -18,6 +18,8 @@ async function signUpWithEmail(email, password, username) {
   if (username) {
     localStorage.setItem('scheduleManager_username', username);
     localStorage.setItem('scheduleManager_displayName', username);
+    // Debug: Log the stored values
+    console.log('Stored username in localStorage:', username);
   }
   // Attempt to update profile with the username
   if (user && username) {

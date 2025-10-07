@@ -119,6 +119,10 @@
       const localStorageUsername = localStorage.getItem('scheduleManager_username') || '';
       const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName') || '';
       
+      // Debug: Log the values to console
+      console.log('localStorageUsername:', localStorageUsername);
+      console.log('localStorageDisplayName:', localStorageDisplayName);
+      
       // Load profile data from database for other fields (avatar, etc.)
       const { data, error } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) {
@@ -237,7 +241,12 @@
       }
     });
 
-    loadProfile();
+    // Wait for DOM to be ready before loading profile
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadProfile);
+    } else {
+      loadProfile();
+    }
   </script>
 </body>
 </html>
