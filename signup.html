@@ -100,10 +100,23 @@
       }
       try {
         const res = await signUpWithEmail(email, password, username);
+        
         // Always show the confirmation message regardless of session status
         // This ensures the user knows what to expect
         infoBox.textContent = `Elküldünk egy megerősítő linket a következő címre: ${email}. Kérjük, ellenőrizd a postafiókod a fiók aktiválásához.`;
         infoBox.classList.remove('hidden');
+        
+        // Force UI update
+        infoBox.offsetHeight; // Trigger reflow
+        
+        // Also force the button to update immediately
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Fiók Létrehozása';
+        }
+        
+        // Small delay to ensure UI updates are visible
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // If user is already signed in (no email confirmation required)
         if (res && res.session) {
@@ -143,7 +156,11 @@
         // Also log the full error object for debugging
         console.error('Full error object:', JSON.stringify(err, null, 2));
       } finally {
-        btn.disabled = false; btn.textContent = 'Fiók Létrehozása';
+        // Ensure button is always reset
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Fiók Létrehozása';
+        }
       }
     });
 
