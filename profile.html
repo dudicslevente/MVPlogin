@@ -137,6 +137,14 @@
         const sel = document.getElementById('currencySelect');
         if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : 'Ft';
       } catch (_) {}
+      
+      // Also update localStorage with profile data for consistency
+      if (profile.username) {
+        localStorage.setItem('scheduleManager_username', profile.username);
+      }
+      if (profile.display_name) {
+        localStorage.setItem('scheduleManager_displayName', profile.display_name);
+      }
     }
 
     // Upload when a file is selected
@@ -191,6 +199,10 @@
         .upsert({ id: userId, username, display_name, avatar_url })
         .select();
 
+      // Save profile data locally
+      localStorage.setItem('scheduleManager_username', username);
+      localStorage.setItem('scheduleManager_displayName', display_name);
+      
       // Save currency preference locally and sync to cloud state
       try {
         const currency = (document.getElementById('currencySelect') && document.getElementById('currencySelect').value) || 'Ft';

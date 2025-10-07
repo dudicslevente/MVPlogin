@@ -56,6 +56,10 @@ class ScheduleManager {
         const savedHolidays = localStorage.getItem('scheduleManager_holidays');
         const savedMandatoryVacations = localStorage.getItem('scheduleManager_mandatory_vacations');
         
+        // Load profile data
+        const savedUsername = localStorage.getItem('scheduleManager_username');
+        const savedDisplayName = localStorage.getItem('scheduleManager_displayName');
+        
         if (savedEmployees) {
             this.employees = JSON.parse(savedEmployees);
             // Ensure all employees have the required properties for backward compatibility

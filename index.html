@@ -28,6 +28,8 @@
                     return;
                 }
                 await loadAppStateAndSync();
+                // Load profile data to ensure it's available
+                await loadProfileDataAfterSignup();
                 // Dynamically load app.js, then initialize
                 const script = document.createElement('script');
                 script.src = 'app.js';

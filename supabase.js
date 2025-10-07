@@ -33,6 +33,31 @@ async function signUpWithEmail(email, password, username) {
   return data;
 }
 
+// Function to load profile data after signup
+async function loadProfileDataAfterSignup() {
+  try {
+    const session = await getSession();
+    if (!session) return null;
+    
+    const userId = session.user.id;
+    const { data, error } = await window.supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error loading profile after signup:', error);
+      return null;
+    }
+    
+    return data || null;
+  } catch (err) {
+    console.error('Error in loadProfileDataAfterSignup:', err);
+    return null;
+  }
+}
+
 async function signInWithEmail(email, password) {
   const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -124,6 +149,7 @@ window.signInWithEmail = signInWithEmail;
 window.signOut = signOut;
 window.getSession = getSession;
 window.uploadProfileAvatar = uploadProfileAvatar;
+window.loadProfileDataAfterSignup = loadProfileDataAfterSignup;
 
 // Convenience: logout and redirect to login
 window.logoutUser = async function() {

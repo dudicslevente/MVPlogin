@@ -102,6 +102,8 @@
         const res = await signUpWithEmail(email, password, username);
         if (res && res.session) {
           // Email confirmation disabled: already signed in
+          // Load profile data to ensure it's available in the app
+          await loadProfileDataAfterSignup();
           window.location.href = 'index.html';
         } else {
           // Confirmation required: show friendly message and keep user on page
