@@ -118,22 +118,15 @@
         console.error(error);
       }
       const profile = data || {};
-      // Don't show temporary usernames that start with 'user_' or display_name that is 'User'
-      // Also check localStorage for user-provided values
+      
+      // Use localStorage values if available (they contain the user-provided username)
+      // Fall back to database values if localStorage is empty
       const localStorageUsername = localStorage.getItem('scheduleManager_username');
       const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName');
       
-      const displayUsername = (profile.username && !profile.username.startsWith('user_')) ? 
-        profile.username : 
-        (localStorageUsername && !localStorageUsername.startsWith('user_')) ? 
-          localStorageUsername : 
-          '';
+      const displayUsername = localStorageUsername || profile.username || '';
+      const displayName = localStorageDisplayName || profile.display_name || '';
       
-      const displayName = (profile.display_name && profile.display_name !== 'User') ? 
-        profile.display_name : 
-        (localStorageDisplayName && localStorageDisplayName !== 'User') ? 
-          localStorageDisplayName : 
-          '';
       document.getElementById('username').value = displayUsername;
       document.getElementById('displayName').value = displayName;
       document.getElementById('avatarUrl').value = profile.avatar_url || '';
@@ -155,12 +148,17 @@
       } catch (_) {}
       
       // Also update localStorage with profile data for consistency
-      // But don't overwrite user-provided values with temporary ones
-      if (profile.username && !profile.username.startsWith('user_')) {
-        localStorage.setItem('scheduleManager_username', profile.username);
+      if (profile.username) {
+        // Only update localStorage if it doesn't already have a user-provided value
+        if (!localStorage.getItem('scheduleManager_username')) {
+          localStorage.setItem('scheduleManager_username', profile.username);
+        }
       }
-      if (profile.display_name && profile.display_name !== 'User') {
-        localStorage.setItem('scheduleManager_displayName', profile.display_name);
+      if (profile.display_name) {
+        // Only update localStorage if it doesn't already have a user-provided value
+        if (!localStorage.getItem('scheduleManager_displayName')) {
+          localStorage.setItem('scheduleManager_displayName', profile.display_name);
+        }
       }
     }
 
@@ -219,9 +217,15 @@
       // Save profile data locally
       if (username && username !== '') {
         localStorage.setItem('scheduleManager_username', username);
+      } else {
+        // If username is empty, remove it from localStorage
+        localStorage.removeItem('scheduleManager_username');
       }
       if (display_name && display_name !== '') {
         localStorage.setItem('scheduleManager_displayName', display_name);
+      } else {
+        // If display_name is empty, remove it from localStorage
+        localStorage.removeItem('scheduleManager_displayName');
       }
       
       // Save currency preference locally and sync to cloud state

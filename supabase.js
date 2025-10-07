@@ -19,38 +19,34 @@ async function signUpWithEmail(email, password, username) {
     localStorage.setItem('scheduleManager_username', username);
     localStorage.setItem('scheduleManager_displayName', username);
   }
-  // Attempt to update profile with the username after a delay
-  // This handles timing issues with the database trigger
+  // Attempt to update profile with the username
   if (user && username) {
-    // Use a timeout to handle potential timing issues with the trigger
+    // Update the profile with the username immediately
+    // Use a slight delay to ensure auth is fully complete
     setTimeout(async () => {
       try {
-        // Wait a bit more for the trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Update the profile with the username
+        // We don't need to wait for the trigger, we can directly update
         const { error: updateError } = await window.supabaseClient
           .from('profiles')
           .update({ username, display_name: username })
           .eq('id', user.id);
         
+        // If update fails (profile doesn't exist yet), try insert
         if (updateError) {
-          console.error('Profile update error:', updateError);
-          
-          // If update fails, try insert (fallback for cases where profile doesn't exist)
           const { error: insertError } = await window.supabaseClient
             .from('profiles')
             .insert({ id: user.id, username, display_name: username })
             .select();
           
           if (insertError) {
-            console.error('Profile insert error:', insertError);
+            console.error('Profile creation error:', insertError);
           }
         }
       } catch (err) {
         console.error('Error updating profile:', err);
       }
-    }, 1000); // Reduced delay to allow faster profile update
+    }, 100); // Very short delay
   }
   return data;
 }
