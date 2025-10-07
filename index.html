@@ -30,6 +30,8 @@
                 await loadAppStateAndSync();
                 // Load profile data to ensure it's available
                 await loadProfileDataAfterSignup();
+                // Add a small delay to ensure profile data is properly loaded
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 // Dynamically load app.js, then initialize
                 const script = document.createElement('script');
                 script.src = 'app.js';

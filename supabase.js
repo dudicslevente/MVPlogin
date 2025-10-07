@@ -14,6 +14,11 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
+  // Store the username in localStorage immediately for immediate availability
+  if (username) {
+    localStorage.setItem('scheduleManager_username', username);
+    localStorage.setItem('scheduleManager_displayName', username);
+  }
   // Attempt to update profile with the username after a delay
   // This handles timing issues with the database trigger
   if (user && username) {
@@ -50,7 +55,7 @@ async function signUpWithEmail(email, password, username) {
   return data;
 }
 
-// Function to load profile data after signup
+// Function to load profile data after signup or login
 async function loadProfileDataAfterSignup() {
   try {
     const session = await getSession();
@@ -60,7 +65,7 @@ async function loadProfileDataAfterSignup() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 5;
+    const maxAttempts = 10; // Increase attempts for login scenarios
     let data, error;
     
     do {
@@ -71,20 +76,26 @@ async function loadProfileDataAfterSignup() {
         .maybeSingle());
       
       if (error) {
-        console.error(`Error loading profile after signup (attempt ${attempts + 1}):`, error);
+        console.error(`Error loading profile (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else if (data.username && data.username.startsWith('user_')) {
         // Profile has temporary username, wait and retry
+        // This might happen if the async update from signup hasn't completed yet
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      } else if ((!data.username || data.username === '') && (!data.display_name || data.display_name === '')) {
+        // Profile exists but is empty, wait and retry
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else {
         // Success, break out of loop
@@ -95,7 +106,7 @@ async function loadProfileDataAfterSignup() {
     } while (attempts < maxAttempts);
     
     if (error) {
-      console.error('Failed to load profile after signup:', error);
+      console.error('Failed to load profile:', error);
       return null;
     }
     
@@ -151,6 +162,10 @@ async function loadProfileDataIntoLocalStorage() {
 async function signInWithEmail(email, password) {
   const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  // Load profile data after login to ensure it's available
+  setTimeout(async () => {
+    await loadProfileDataIntoLocalStorage();
+  }, 1000);
   return data;
 }
 
