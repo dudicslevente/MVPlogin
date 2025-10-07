@@ -102,9 +102,9 @@
         const res = await signUpWithEmail(email, password, username);
         if (res && res.session) {
           // Email confirmation disabled: already signed in
-          // Add a delay to ensure profile update completes
+          // Add a longer delay to ensure profile update completes
           console.log('Signup successful, waiting for profile update...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 4000));
           console.log('Redirecting to index...');
           window.location.href = 'index.html';
         } else {

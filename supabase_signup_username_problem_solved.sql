@@ -1,11 +1,15 @@
+-- First, modify the table to allow NULL values for username temporarily
+-- This should be run in the Supabase SQL editor
+-- ALTER TABLE public.profiles ALTER COLUMN username DROP NOT NULL;
+
 -- Function to automatically create a profile for new users
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  -- Create a profile with empty values that can be updated later
+  -- Create a profile with NULL values that can be updated later
   -- This avoids conflicts with the application's profile update logic
   insert into public.profiles (id, username, display_name)
-  values (new.id, '', ''); -- Empty values that can be updated later
+  values (new.id, NULL, NULL); -- NULL values that can be updated later
   return new;
 end;
 $$ language plpgsql security definer;

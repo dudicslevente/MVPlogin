@@ -23,54 +23,62 @@ async function signUpWithEmail(email, password, username) {
   }
   // Attempt to update profile with the username
   if (user && username) {
-    // Use a timeout to handle potential timing issues with auth/session
-    setTimeout(async () => {
+    // Use a more aggressive approach to ensure profile is updated
+    // Try multiple times with different strategies
+    const updateProfile = async (attempt) => {
+      if (attempt > 3) {
+        console.error('Failed to update profile after 3 attempts');
+        return;
+      }
+      
       try {
         // Wait a bit for auth to fully complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        
+        console.log(`Attempt ${attempt} to update profile`);
         
         // First try to update the existing profile
-        let { error: updateError } = await window.supabaseClient
+        let { data: updateData, error: updateError } = await window.supabaseClient
           .from('profiles')
           .update({ username, display_name: username })
-          .eq('id', user.id);
+          .eq('id', user.id)
+          .select();
         
-        // If update fails, try insert (profile might not exist yet)
-        if (updateError) {
+        // Check if update was successful
+        if (!updateError && updateData && updateData.length > 0) {
+          console.log('Profile updated successfully');
+          return;
+        }
+        
+        // If update failed, try insert (profile might not exist yet or have NULL values)
+        if (updateError || !updateData || updateData.length === 0) {
           console.log('Update failed, trying insert:', updateError);
-          const { error: insertError } = await window.supabaseClient
+          const { data: insertData, error: insertError } = await window.supabaseClient
             .from('profiles')
             .insert({ id: user.id, username, display_name: username })
             .select();
           
-          if (insertError) {
-            console.error('Profile creation error:', insertError);
-          } else {
+          if (!insertError && insertData && insertData.length > 0) {
             console.log('Profile created successfully');
+            return;
+          } else if (insertError) {
+            console.error('Profile creation error:', insertError);
+            // Try again with a different approach
+            setTimeout(() => updateProfile(attempt + 1), 1000);
           }
         } else {
           console.log('Profile updated successfully');
         }
       } catch (err) {
-        console.error('Error updating profile:', err);
+        console.error(`Error updating profile (attempt ${attempt}):`, err);
         
-        // Last resort: try insert in case update failed due to RLS or other issues
-        try {
-          const { error: insertError } = await window.supabaseClient
-            .from('profiles')
-            .insert({ id: user.id, username, display_name: username })
-            .select();
-          
-          if (insertError) {
-            console.error('Profile creation fallback error:', insertError);
-          } else {
-            console.log('Profile created successfully (fallback)');
-          }
-        } catch (insertErr) {
-          console.error('Error in profile creation fallback:', insertErr);
-        }
+        // Try again
+        setTimeout(() => updateProfile(attempt + 1), 1000);
       }
-    }, 100); // Small delay to ensure auth is processed
+    };
+    
+    // Start the update process
+    setTimeout(() => updateProfile(1), 100);
   }
   return data;
 }
