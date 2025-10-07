@@ -14,20 +14,26 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
-  // Always attempt to create profile with the username, regardless of session status
+  // Always attempt to create or update profile with the username, regardless of session status
   if (user && username) {
-    // Use service role or bypass RLS when creating profile for new user
-    // since they may not be authenticated yet (especially with email confirmation)
-    const { error: profileError } = await window.supabaseClient
+    // First try to update the profile (in case it already exists from the trigger)
+    let { error: updateError } = await window.supabaseClient
       .from('profiles')
-      .insert({ id: user.id, username, display_name: username })
-      .select();
+      .update({ username, display_name: username })
+      .eq('id', user.id);
     
-    // If there's an error creating the profile, log it but don't throw
-    // as we want the signup to succeed even if profile creation fails
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Don't throw the error to avoid breaking the signup flow
+    // If update fails, try to insert (in case the trigger doesn't exist or failed)
+    if (updateError) {
+      const { error: insertError } = await window.supabaseClient
+        .from('profiles')
+        .insert({ id: user.id, username, display_name: username })
+        .select();
+      
+      // If both operations fail, log the error but don't throw
+      if (insertError) {
+        console.error('Profile creation error:', insertError);
+        // Don't throw the error to avoid breaking the signup flow
+      }
     }
   }
   return data;
@@ -49,6 +55,16 @@ async function loadProfileDataAfterSignup() {
     if (error) {
       console.error('Error loading profile after signup:', error);
       return null;
+    }
+    
+    // Store profile data in localStorage for immediate availability
+    if (data) {
+      if (data.username) {
+        localStorage.setItem('scheduleManager_username', data.username);
+      }
+      if (data.display_name) {
+        localStorage.setItem('scheduleManager_displayName', data.display_name);
+      }
     }
     
     return data || null;

@@ -111,7 +111,19 @@
           infoBox.classList.remove('hidden');
         }
       } catch (err) {
-        errorBox.textContent = err.message || 'Regisztráció sikertelen';
+        // Provide more specific error messages
+        let errorMessage = 'Regisztráció sikertelen';
+        if (err.message) {
+          // Check for common Supabase errors
+          if (err.message.includes('duplicate')) {
+            errorMessage = 'Ez az e-mail cím vagy felhasználónév már foglalt';
+          } else if (err.message.includes('constraint')) {
+            errorMessage = 'Adatbázis hiba történt. Kérjük, próbálja meg később';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        errorBox.textContent = errorMessage;
         errorBox.classList.remove('hidden');
         console.error('Signup error:', err);
       } finally {
