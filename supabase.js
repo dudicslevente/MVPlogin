@@ -25,80 +25,61 @@ async function signUpWithEmail(email, password, username) {
   
   // Attempt to update profile with the username
   if (user && username) {
-    // Use a more aggressive approach to ensure profile is updated
-    // Try multiple times with different strategies
-    const updateProfile = async (attempt) => {
-      if (attempt > 10) { // Increased attempts
-        console.error('Failed to update profile after 10 attempts');
-        throw new Error('Database error saving new user');
-      }
+    // More efficient approach: try update first, then insert if needed
+    let profileUpdated = false;
+    let attempts = 0;
+    const maxAttempts = 8;
+    
+    while (!profileUpdated && attempts < maxAttempts) {
+      attempts++;
+      console.log(`Attempt ${attempts} to update profile for user:`, user.id);
       
       try {
-        // Wait a bit for auth to fully complete and trigger to run
-        await new Promise(resolve => setTimeout(resolve, 1500 * attempt)); // Increased delay
+        // Wait for auth to fully complete and trigger to run
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempts));
         
-        console.log(`Attempt ${attempt} to update profile for user:`, user.id);
-        
-        // First, check if profile exists
-        const { data: profileCheck, error: profileCheckError } = await window.supabaseClient
+        // Try to update the existing profile (created by the trigger)
+        const { data: updateData, error: updateError } = await window.supabaseClient
           .from('profiles')
-          .select('id, username')
+          .update({ username, display_name: username })
           .eq('id', user.id)
-          .maybeSingle();
-          
-        if (profileCheckError) {
-          console.error('Error checking profile existence:', profileCheckError);
-          throw profileCheckError;
-        }
+          .select();
         
-        let resultData, resultError;
-        
-        if (profileCheck) {
-          // Profile exists, update it
-          console.log('Profile exists, updating...');
-          const { data: updateData, error: updateError } = await window.supabaseClient
-            .from('profiles')
-            .update({ username, display_name: username })
-            .eq('id', user.id)
-            .select();
-            
-          resultData = updateData;
-          resultError = updateError;
+        if (!updateError && updateData && updateData.length > 0) {
+          console.log('Profile updated successfully:', updateData[0]);
+          profileUpdated = true;
         } else {
-          // Profile doesn't exist, create it
-          console.log('Profile does not exist, creating...');
+          // If update failed, try insert (profile might not exist yet)
+          console.log('Update failed, trying insert. Update error:', updateError);
           const { data: insertData, error: insertError } = await window.supabaseClient
             .from('profiles')
             .insert({ id: user.id, username, display_name: username })
             .select();
-            
-          resultData = insertData;
-          resultError = insertError;
-        }
-        
-        // Check if operation was successful
-        if (!resultError && resultData && resultData.length > 0) {
-          console.log('Profile operation successful:', resultData[0]);
-          return resultData[0];
-        } else {
-          console.error('Profile operation failed:', resultError);
-          throw resultError || new Error('Profile operation failed');
+          
+          if (!insertError && insertData && insertData.length > 0) {
+            console.log('Profile created successfully:', insertData[0]);
+            profileUpdated = true;
+          } else {
+            console.error('Insert also failed. Insert error:', insertError);
+            // Wait before retrying
+            if (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
         }
       } catch (err) {
-        console.error(`Error updating profile (attempt ${attempt}):`, err);
-        
-        // If it's the last attempt, rethrow the error
-        if (attempt >= 10) {
-          throw new Error('Database error saving new user: ' + (err.message || err));
+        console.error(`Error updating profile (attempt ${attempts}):`, err);
+        // Wait before retrying
+        if (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-        
-        // Try again
-        await new Promise(resolve => setTimeout(() => updateProfile(attempt + 1), 2500));
       }
-    };
+    }
     
-    // Start the update process and wait for it to complete
-    await updateProfile(1);
+    if (!profileUpdated) {
+      console.error('Failed to update profile after', maxAttempts, 'attempts');
+      throw new Error('Database error saving new user');
+    }
   }
   return data;
 }
@@ -113,7 +94,7 @@ async function loadProfileDataAfterSignup() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 15; // Increase attempts for login scenarios
+    const maxAttempts = 20; // Increase attempts for login scenarios
     let data, error;
     
     do {
@@ -127,23 +108,23 @@ async function loadProfileDataAfterSignup() {
         console.error(`Error loading profile (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         // This might happen if the async update from signup hasn't completed yet
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else if ((!data.username || data.username === '') && (!data.display_name || data.display_name === '')) {
         // Profile exists but is empty, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       } else {
         // Success, break out of loop
@@ -193,12 +174,43 @@ async function loadProfileDataIntoLocalStorage() {
     if (!session) return;
     
     const userId = session.user.id;
-    const { data, error } = await window.supabaseClient
-      .from('profiles')
-      .select('username, display_name')
-      .eq('id', userId)
-      .maybeSingle();
+    
+    // Try to load profile data with retries
+    let attempts = 0;
+    const maxAttempts = 10;
+    let data, error;
+    
+    do {
+      ({ data, error } = await window.supabaseClient
+        .from('profiles')
+        .select('username, display_name')
+        .eq('id', userId)
+        .maybeSingle());
       
+      if (error) {
+        console.error(`Error loading profile data (attempt ${attempts + 1}):`, error);
+        if (attempts < maxAttempts - 1) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } else if (!data) {
+        // Profile doesn't exist yet, wait and retry
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
+        // Profile has temporary username, wait and retry
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } else {
+        // Success, break out of loop
+        break;
+      }
+      
+      attempts++;
+    } while (attempts < maxAttempts);
+    
     if (error) {
       console.error('Error loading profile data:', error);
       return;

@@ -5,8 +5,13 @@ returns trigger as $$
 begin
   -- Create a profile with a unique temporary username based on the user's ID
   -- This avoids the uniqueness constraint violation while working with NOT NULL constraint
-  insert into public.profiles (id, username, display_name)
-  values (new.id, 'user_' || new.id, 'User'); -- Temporary unique values
+  begin
+    insert into public.profiles (id, username, display_name)
+    values (new.id, 'user_' || new.id, 'User'); -- Temporary unique values
+  exception when unique_violation then
+    -- If profile already exists, do nothing
+    null;
+  end;
   return new;
 end;
 $$ language plpgsql security definer;

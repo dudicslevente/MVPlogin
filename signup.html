@@ -104,7 +104,7 @@
           // Email confirmation disabled: already signed in
           // Add a longer delay to ensure profile update completes
           console.log('Signup successful, waiting for profile update...');
-          await new Promise(resolve => setTimeout(resolve, 8000));
+          await new Promise(resolve => setTimeout(resolve, 5000));
           console.log('Redirecting to index...');
           window.location.href = 'index.html';
         } else {
