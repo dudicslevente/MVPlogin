@@ -100,18 +100,20 @@
       }
       try {
         const res = await signUpWithEmail(email, password, username);
+        // Always show the confirmation message regardless of session status
+        // This ensures the user knows what to expect
+        infoBox.textContent = `Elküldünk egy megerősítő linket a következő címre: ${email}. Kérjük, ellenőrizd a postafiókod a fiók aktiválásához.`;
+        infoBox.classList.remove('hidden');
+        
+        // If user is already signed in (no email confirmation required)
         if (res && res.session) {
-          // Email confirmation disabled: already signed in
-          // Add a longer delay to ensure profile update completes
-          console.log('Signup successful, waiting for profile update...');
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          console.log('Signup successful, user already signed in');
+          // Even if signed in, still wait a moment for profile update
+          await new Promise(resolve => setTimeout(resolve, 2000));
           console.log('Redirecting to index...');
           window.location.href = 'index.html';
-        } else {
-          // Confirmation required: show friendly message and keep user on page
-          infoBox.textContent = `Elküldünk egy megerősítő linket a következő címre: ${email}. Kérjük, ellenőrizd a postafiókod a fiók aktiválásához.`;
-          infoBox.classList.remove('hidden');
         }
+        // If email confirmation is required, we keep the user on the page with the info message
       } catch (err) {
         // Provide more specific error messages
         let errorMessage = 'Regisztráció sikertelen';
