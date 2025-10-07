@@ -14,26 +14,22 @@ async function signUpWithEmail(email, password, username) {
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
-  // Always attempt to create or update profile with the username, regardless of session status
+  // Always attempt to update profile with the username, regardless of session status
   if (user && username) {
-    // First try to update the profile (in case it already exists from the trigger)
-    let { error: updateError } = await window.supabaseClient
+    // Wait a moment for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update the profile with the username (the profile should already exist from the trigger)
+    const { error: updateError } = await window.supabaseClient
       .from('profiles')
       .update({ username, display_name: username })
       .eq('id', user.id);
     
-    // If update fails, try to insert (in case the trigger doesn't exist or failed)
+    // If there's an error updating the profile, log it but don't throw
+    // as we want the signup to succeed even if profile update fails
     if (updateError) {
-      const { error: insertError } = await window.supabaseClient
-        .from('profiles')
-        .insert({ id: user.id, username, display_name: username })
-        .select();
-      
-      // If both operations fail, log the error but don't throw
-      if (insertError) {
-        console.error('Profile creation error:', insertError);
-        // Don't throw the error to avoid breaking the signup flow
-      }
+      console.error('Profile update error:', updateError);
+      // Don't throw the error to avoid breaking the signup flow
     }
   }
   return data;
@@ -46,14 +42,40 @@ async function loadProfileDataAfterSignup() {
     if (!session) return null;
     
     const userId = session.user.id;
-    const { data, error } = await window.supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    
+    // Try to load profile data with retries
+    let attempts = 0;
+    const maxAttempts = 3;
+    let data, error;
+    
+    do {
+      ({ data, error } = await window.supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle());
       
+      if (error) {
+        console.error(`Error loading profile after signup (attempt ${attempts + 1}):`, error);
+        if (attempts < maxAttempts - 1) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } else if (!data || (!data.username && !data.display_name)) {
+        // Profile exists but is empty, wait and retry
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } else {
+        // Success, break out of loop
+        break;
+      }
+      
+      attempts++;
+    } while (attempts < maxAttempts);
+    
     if (error) {
-      console.error('Error loading profile after signup:', error);
+      console.error('Failed to load profile after signup:', error);
       return null;
     }
     

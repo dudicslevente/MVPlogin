@@ -104,6 +104,8 @@
           // Email confirmation disabled: already signed in
           // Load profile data to ensure it's available in the app
           await loadProfileDataAfterSignup();
+          // Add a small delay to ensure profile update completes
+          await new Promise(resolve => setTimeout(resolve, 500));
           window.location.href = 'index.html';
         } else {
           // Confirmation required: show friendly message and keep user on page
@@ -119,6 +121,12 @@
             errorMessage = 'Ez az e-mail cím vagy felhasználónév már foglalt';
           } else if (err.message.includes('constraint')) {
             errorMessage = 'Adatbázis hiba történt. Kérjük, próbálja meg később';
+          } else if (err.message.includes('409')) {
+            // Conflict error
+            errorMessage = 'Ez az e-mail cím már regisztrálva van';
+          } else if (err.message.includes('422')) {
+            // Unprocessable entity
+            errorMessage = 'Helytelen adatformátum. Kérjük, ellenőrizze a megadott adatokat';
           } else {
             errorMessage = err.message;
           }
@@ -126,6 +134,9 @@
         errorBox.textContent = errorMessage;
         errorBox.classList.remove('hidden');
         console.error('Signup error:', err);
+        
+        // Also log the full error object for debugging
+        console.error('Full error object:', JSON.stringify(err, null, 2));
       } finally {
         btn.disabled = false; btn.textContent = 'Fiók Létrehozása';
       }
