@@ -118,8 +118,11 @@
         console.error(error);
       }
       const profile = data || {};
-      document.getElementById('username').value = profile.username || '';
-      document.getElementById('displayName').value = profile.display_name || '';
+      // Don't show temporary usernames that start with 'user_'
+      const displayUsername = (profile.username && !profile.username.startsWith('user_')) ? profile.username : '';
+      const displayName = (profile.display_name && !profile.display_name.startsWith('user_')) ? profile.display_name : '';
+      document.getElementById('username').value = displayUsername;
+      document.getElementById('displayName').value = displayName;
       document.getElementById('avatarUrl').value = profile.avatar_url || '';
       const preview = document.getElementById('avatarPreview');
       const placeholder = document.getElementById('avatarPlaceholder');
@@ -200,8 +203,12 @@
         .select();
 
       // Save profile data locally
-      localStorage.setItem('scheduleManager_username', username);
-      localStorage.setItem('scheduleManager_displayName', display_name);
+      if (username && username !== '') {
+        localStorage.setItem('scheduleManager_username', username);
+      }
+      if (display_name && display_name !== '') {
+        localStorage.setItem('scheduleManager_displayName', display_name);
+      }
       
       // Save currency preference locally and sync to cloud state
       try {

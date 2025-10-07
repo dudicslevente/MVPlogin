@@ -20,6 +20,9 @@ async function signUpWithEmail(email, password, username) {
     // Use a timeout to handle potential timing issues with the trigger
     setTimeout(async () => {
       try {
+        // Wait a bit more for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Update the profile with the username
         const { error: updateError } = await window.supabaseClient
           .from('profiles')
@@ -28,11 +31,21 @@ async function signUpWithEmail(email, password, username) {
         
         if (updateError) {
           console.error('Profile update error:', updateError);
+          
+          // If update fails, try insert (fallback for cases where profile doesn't exist)
+          const { error: insertError } = await window.supabaseClient
+            .from('profiles')
+            .insert({ id: user.id, username, display_name: username })
+            .select();
+          
+          if (insertError) {
+            console.error('Profile insert error:', insertError);
+          }
         }
       } catch (err) {
         console.error('Error updating profile:', err);
       }
-    }, 1000); // Delay to allow trigger to complete
+    }, 1500); // Delay to allow trigger to complete
   }
   return data;
 }
@@ -68,6 +81,11 @@ async function loadProfileDataAfterSignup() {
         if (attempts < maxAttempts - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
+      } else if (data.username && data.username.startsWith('user_')) {
+        // Profile has temporary username, wait and retry
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       } else {
         // Success, break out of loop
         break;
@@ -83,10 +101,10 @@ async function loadProfileDataAfterSignup() {
     
     // Store profile data in localStorage for immediate availability
     if (data) {
-      if (data.username && data.username !== '') {
+      if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
         localStorage.setItem('scheduleManager_username', data.username);
       }
-      if (data.display_name && data.display_name !== '') {
+      if (data.display_name && data.display_name !== '' && !data.display_name.startsWith('user_')) {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       }
     }
@@ -118,10 +136,10 @@ async function loadProfileDataIntoLocalStorage() {
     
     // Store profile data in localStorage
     if (data) {
-      if (data.username && data.username !== '') {
+      if (data.username && data.username !== '' && !data.username.startsWith('user_')) {
         localStorage.setItem('scheduleManager_username', data.username);
       }
-      if (data.display_name && data.display_name !== '') {
+      if (data.display_name && data.display_name !== '' && !data.display_name.startsWith('user_')) {
         localStorage.setItem('scheduleManager_displayName', data.display_name);
       }
     }
