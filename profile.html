@@ -110,29 +110,57 @@
     }
 
     async function loadProfile() {
+      console.log('Loading profile...');
       const session = await ensureSession();
       if (!session) return;
       const userId = session.user.id;
+      console.log('User ID:', userId);
       
-      // Always use the user-provided username from localStorage
-      // This ensures we never show the temporary database values
-      const localStorageUsername = localStorage.getItem('scheduleManager_username') || '';
-      const localStorageDisplayName = localStorage.getItem('scheduleManager_displayName') || '';
+      // Check if localStorage is available (it might be disabled in private mode)
+      let localStorageAvailable = true;
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+      } catch (e) {
+        localStorageAvailable = false;
+        console.log('localStorage is not available (private mode or disabled)');
+      }
       
-      // Debug: Log the values to console
-      console.log('localStorageUsername:', localStorageUsername);
-      console.log('localStorageDisplayName:', localStorageDisplayName);
+      // Try to get username from localStorage first, fallback to database
+      let displayUsername = '';
+      let displayName = '';
       
-      // Load profile data from database for other fields (avatar, etc.)
+      if (localStorageAvailable) {
+        displayUsername = localStorage.getItem('scheduleManager_username') || '';
+        displayName = localStorage.getItem('scheduleManager_displayName') || '';
+        
+        // Debug: Log the values to console
+        console.log('localStorageUsername:', displayUsername);
+        console.log('localStorageDisplayName:', displayName);
+      }
+      
+      // Load profile data from database
+      console.log('Loading profile from database...');
       const { data, error } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) {
-        console.error(error);
+        console.error('Database error:', error);
       }
       const profile = data || {};
+      console.log('Database profile data:', profile);
       
-      // Always display the user-provided username, never the database temporary values
-      document.getElementById('username').value = localStorageUsername;
-      document.getElementById('displayName').value = localStorageDisplayName;
+      // If localStorage is not available or empty, use database values
+      if (!localStorageAvailable || !displayUsername) {
+        displayUsername = profile.username || '';
+      }
+      if (!localStorageAvailable || !displayName) {
+        displayName = profile.display_name || '';
+      }
+      
+      // Display the username (from localStorage if available, otherwise from database)
+      console.log('Displaying username:', displayUsername);
+      console.log('Displaying display name:', displayName);
+      document.getElementById('username').value = displayUsername;
+      document.getElementById('displayName').value = displayName;
       document.getElementById('avatarUrl').value = profile.avatar_url || '';
       
       // Update avatar preview
