@@ -20,6 +20,99 @@
     <script>
         // Auth gate and deferred app load
         window.BLOCK_APP_INIT = true;
+        
+        // Function to get time-based greeting with flexible patterns
+        function getGreetingPattern(displayName) {
+            const hour = new Date().getHours();
+            const greetings = {
+                morning: [
+                    `Jó reggelt, ${displayName}!`, 
+                    `Szép reggelt, ${displayName}!`,
+                    `Jó reggelt ${displayName}, hogy aludtál?`,
+                    `Üdv Újra, ${displayName}!`,
+                    `Üdvözlet, ${displayName}!`,
+                    `${displayName}, mindig jó látni téged!`,
+                    `Szia, ${displayName}!`
+                ],
+                afternoon: [
+                    `Szép napot, ${displayName}!`,
+                    `Kellemes délutánt, ${displayName}!`,
+                    `Jó napot, ${displayName}!`,
+                    `Üdv újra, ${displayName}!`,
+                    `Üdvözlet, ${displayName}!`,
+                    `Jó látni téged, ${displayName}!`,
+                    `${displayName}, mindig jó látni téged!`,
+                    `Szia, ${displayName}!`
+                ],
+                evening: [
+                    `Szép estét, ${displayName}!`,
+                    `Kellemes estét, ${displayName}!`,
+                    `Jó estét, ${displayName}!`,
+                    `Reméljük szép napod volt!`,
+                    `${displayName}, mindig jó látni téged!`,
+                    `Szia, ${displayName}!`
+                ]
+            };
+            
+            if (hour < 12) {
+                const randomIndex = Math.floor(Math.random() * greetings.morning.length);
+                return greetings.morning[randomIndex];
+            } else if (hour < 18) {
+                const randomIndex = Math.floor(Math.random() * greetings.afternoon.length);
+                return greetings.afternoon[randomIndex];
+            } else {
+                const randomIndex = Math.floor(Math.random() * greetings.evening.length);
+                return greetings.evening[randomIndex];
+            }
+        }
+        
+        // Function to update the greeting with user's nickname from database
+        async function updateGreeting() {
+            // Get display name from localStorage as fallback
+            let displayName = localStorage.getItem('scheduleManager_displayName') || 
+                             localStorage.getItem('scheduleManager_username') || 
+                             '';
+            
+            // Try to get fresh data from database if we don't have it
+            if (!displayName) {
+                try {
+                    const session = await getSession();
+                    if (session) {
+                        const userId = session.user.id;
+                        const { data, error } = await window.supabaseClient
+                            .from('profiles')
+                            .select('display_name, username')
+                            .eq('id', userId)
+                            .maybeSingle();
+                        
+                        if (!error && data) {
+                            displayName = data.display_name || data.username || '';
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error fetching profile data:', err);
+                }
+            }
+            
+            // If we still don't have a display name, use a default
+            if (!displayName) {
+                displayName = 'Felhasználó';
+            }
+            
+            const greeting = getGreetingPattern(displayName);
+            const greetingElement = document.getElementById('greetingText');
+            
+            if (greetingElement) {
+                greetingElement.textContent = greeting;
+            }
+        }
+        
+        // Update greeting immediately and then every minute
+        document.addEventListener('DOMContentLoaded', () => {
+            updateGreeting();
+            setInterval(() => updateGreeting(), 60000); // Update every minute
+        });
+        
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const session = await getSession();
@@ -95,9 +188,9 @@
     <div id="schedulePage" class="page active">
         <header class="bg-white shadow-sm">
             <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <h1 class="text-2xl font-bold flex items-center">
                     <i data-feather="calendar" class="mr-2"></i>
-                    Műszakbeosztás Kezelő
+                    <span id="greetingText" class="mr-2"></span>
                 </h1>
                 <div class="flex space-x-4">
                     <button onclick="scheduleManager.openHolidayModal()"
