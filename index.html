@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alkalmazotti Műszakbeosztás Kezelő</title>
+    <title>Schedulix Beosztáskezelő</title>
     <link rel="icon" type="image/png" href="s-fekete.png" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="s-feher.png" media="(prefers-color-scheme: dark)">    
+    <link rel="icon" type="image/png" href="s-atmenetes.png" media="(prefers-color-scheme: dark)">    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
@@ -107,10 +107,10 @@
             }
         }
         
-        // Update greeting immediately and then every minute
+        // Update greeting immediately and then every 45 minutes
         document.addEventListener('DOMContentLoaded', () => {
             updateGreeting();
-            setInterval(() => updateGreeting(), 60000); // Update every minute
+            setInterval(() => updateGreeting(), 2700000); // Update every 45 minutes (45 * 60 * 1000)
         });
         
         document.addEventListener('DOMContentLoaded', async () => {
