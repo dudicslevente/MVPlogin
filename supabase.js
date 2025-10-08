@@ -25,82 +25,62 @@ async function signUpWithEmail(email, password, username) {
   
   // Attempt to update profile with the username
   if (user && username) {
-    // More efficient approach: try update first, then insert if needed
-    let profileUpdated = false;
-    let attempts = 0;
-    const maxAttempts = 5; // Reduced attempts for faster feedback
-    
-    while (!profileUpdated && attempts < maxAttempts) {
-      attempts++;
-      console.log(`Attempt ${attempts} to update profile for user:`, user.id);
+    // Use a more aggressive approach to ensure profile is updated
+    // Try multiple times with different strategies
+    const updateProfile = async (attempt) => {
+      if (attempt > 10) {
+        console.error('Failed to update profile after 10 attempts');
+        return;
+      }
       
       try {
-        // Wait for auth to fully complete and trigger to run (shorter delay)
-        await new Promise(resolve => setTimeout(resolve, 800 * attempts));
+        // Wait a bit for auth to fully complete and trigger to run
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
         
-        // First, check if profile exists
-        const { data: profileCheck, error: profileCheckError } = await window.supabaseClient
+        console.log(`Attempt ${attempt} to update profile`);
+        
+        // Try to update the existing profile (created by the trigger)
+        let { data: updateData, error: updateError } = await window.supabaseClient
           .from('profiles')
-          .select('id, username')
+          .update({ username, display_name: username })
           .eq('id', user.id)
-          .maybeSingle();
-          
-        console.log(`Profile check (attempt ${attempts}):`, profileCheck, profileCheckError);
+          .select();
         
-        if (profileCheckError) {
-          console.error('Error checking profile existence:', profileCheckError);
-          throw profileCheckError;
+        // Check if update was successful
+        if (!updateError && updateData && updateData.length > 0) {
+          console.log('Profile updated successfully');
+          return;
         }
         
-        let resultData, resultError;
-        
-        if (profileCheck) {
-          // Profile exists, update it
-          console.log('Profile exists, updating...');
-          const { data: updateData, error: updateError } = await window.supabaseClient
-            .from('profiles')
-            .update({ username, display_name: username })
-            .eq('id', user.id)
-            .select();
-            
-          resultData = updateData;
-          resultError = updateError;
-          console.log('Update result:', updateData, updateError);
-        } else {
-          // Profile doesn't exist, create it
-          console.log('Profile does not exist, creating...');
+        // If update failed, try insert (profile might not exist yet)
+        if (updateError || !updateData || updateData.length === 0) {
+          console.log('Update failed, trying insert:', updateError);
           const { data: insertData, error: insertError } = await window.supabaseClient
             .from('profiles')
             .insert({ id: user.id, username, display_name: username })
             .select();
-            
-          resultData = insertData;
-          resultError = insertError;
-          console.log('Insert result:', insertData, insertError);
-        }
-        
-        // Check if operation was successful
-        if (!resultError && resultData && resultData.length > 0) {
-          console.log('Profile operation successful:', resultData[0]);
-          profileUpdated = true;
+          
+          if (!insertError && insertData && insertData.length > 0) {
+            console.log('Profile created successfully');
+            return;
+          } else if (insertError) {
+            console.error('Profile creation error:', insertError);
+            // Try again with a different approach
+            setTimeout(() => updateProfile(attempt + 1), 2000);
+          }
         } else {
-          console.error('Profile operation failed:', resultError);
-          throw resultError || new Error('Profile operation failed');
+          console.log('Profile updated successfully');
         }
       } catch (err) {
-        console.error(`Error updating profile (attempt ${attempts}):`, err);
-        // Wait before retrying (shorter delay)
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        console.error(`Error updating profile (attempt ${attempt}):`, err);
+        
+        // Try again
+        setTimeout(() => updateProfile(attempt + 1), 2000);
       }
-    }
+    };
     
-    if (!profileUpdated) {
-      console.error('Failed to update profile after', maxAttempts, 'attempts');
-      // Don't throw an error that blocks the user, just log it
-      console.error('Profile update failed, but continuing with signup');
-    }
+    // Start the update process
+    setTimeout(() => updateProfile(1), 500);
   }
   return data;
 }
