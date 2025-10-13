@@ -2401,8 +2401,25 @@ avigation
         
         if (this.editingEmployee) {
             // Update existing employee
-            const index = this.employees.findIndex(emp => emp.id === this.editingEmployee.id);
+            const index = this.employees.findIndex(emp => String(emp.id) === String(this.editingEmployee.id));
             this.employees[index] = employee;
+            
+            // Update employee information in existing shifts
+            let updatedShifts = 0;
+            Object.keys(this.schedules).forEach(weekKey => {
+                Object.keys(this.schedules[weekKey]).forEach(date => {
+                    this.schedules[weekKey][date].forEach(shift => {
+                        if (String(shift.employeeId) === String(this.editingEmployee.id)) {
+                            // Update shift with new employee information
+                            shift.position = employee.position;
+                            // Note: We don't update the employee name in shifts as it's looked up dynamically
+                            updatedShifts++;
+                        }
+                    });
+                });
+            });
+            
+            console.log(`Updated ${updatedShifts} shifts for employee ${employee.name}`);
         } else {
             // Add new employee
             this.employees.push(employee);
@@ -2412,6 +2429,7 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
+        this.renderSchedule(); // Re-render schedule to reflect changes
         this.showNotification(`Alkalmazott: ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'frissítve' : 'hozzáadva'} sikeresen!`, 'success');
     }
 
@@ -2430,7 +2448,7 @@ avigation
             'Alkalmazott Törlése',
             `Biztos vagy benne, hogy törölni akarod ${this.getEmployeeDisplayName(employee)} alkalmazottat? Ez eltávolítja az összes beosztott műszakját is.`, 
             () => {
-                this.employees = this.employees.filter(emp => emp.id !== id);
+                this.employees = this.employees.filter(emp => String(emp.id) !== String(id));
                 
                 // Remove all shifts for this employee
                 Object.keys(this.schedules).forEach(week => {
@@ -5039,8 +5057,28 @@ avigation
         
         if (this.editingEmployee) {
             // Update existing employee
-            const index = this.employees.findIndex(emp => emp.id === this.editingEmployee.id);
+            const index = this.employees.findIndex(emp => String(emp.id) === String(this.editingEmployee.id));
             this.employees[index] = employee;
+            
+            // Update employee information in existing shifts
+            let updatedShifts = 0;
+            const editingEmployeeId = String(this.editingEmployee.id);
+            
+            Object.keys(this.schedules).forEach(weekKey => {
+                Object.keys(this.schedules[weekKey]).forEach(date => {
+                    this.schedules[weekKey][date].forEach(shift => {
+                        // Use string comparison to ensure type compatibility
+                        if (String(shift.employeeId) === editingEmployeeId) {
+                            // Update shift with new employee information
+                            shift.position = employee.position;
+                            // Note: We don't update the employee name in shifts as it's looked up dynamically
+                            updatedShifts++;
+                        }
+                    });
+                });
+            });
+            
+            console.log(`Updated ${updatedShifts} shifts for employee ${employee.name}`);
         } else {
             // Add new employee
             this.employees.push(employee);
@@ -5050,6 +5088,7 @@ avigation
         this.closeEmployeeModal();
         this.renderEmployeeTable();
         this.renderEmployeeList();
+        this.renderSchedule(); // Re-render schedule to reflect changes
         this.showNotification(`Alkalmazott: ${this.getEmployeeDisplayName(employee)} ${this.editingEmployee ? 'frissítve' : 'hozzáadva'} sikeresen!`, 'success');
     }
 
