@@ -9,6 +9,8 @@
     --border-primary: #e5e7eb;
     --border-secondary: #d1d5db;
     --shadow: rgba(0, 0, 0, 0.1);
+    /* Brand Colors */
+    --brand-color: #23413e; /* Primary color in light mode */
 }
 
 [data-theme="dark"] {
@@ -21,6 +23,8 @@
     --border-primary: #4b5563;
     --border-secondary: #6b7280;
     --shadow: rgba(0, 0, 0, 0.4);
+    /* Brand Colors */
+    --brand-color: #22c55f88; /* Secondary color in dark mode */
 }
 
 /* Custom Styles */
@@ -30,6 +34,23 @@
 
 .page.active {
     display: block;
+}
+
+/* Brand Color Classes */
+.text-brand-color {
+    color: var(--brand-color);
+}
+
+.bg-brand-color {
+    background-color: var(--brand-color);
+}
+
+.hover\:bg-brand-color:hover {
+    background-color: var(--brand-color);
+}
+
+.border-brand-color {
+    border-color: var(--brand-color);
 }
 
 body {
@@ -51,14 +72,14 @@ body {
 }
 
 .nav-btn.active {
-    color: #2563eb;
-    background-color: #dbeafe;
+    color: var(--brand-color);
+    background-color: rgba(35, 65, 62, 0.1);
 }
 
 /* Dark mode specific overrides */
 [data-theme="dark"] .nav-btn.active {
-    color: #60a5fa;
-    background-color: #1e3a8a;
+    color: var(--brand-color);
+    background-color: rgba(34, 197, 95, 0.15);
 }
 
 .form-input, .form-select {
