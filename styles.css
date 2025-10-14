@@ -10,6 +10,8 @@
     --border-secondary: #d1d5db;
     --shadow: rgba(0, 0, 0, 0.1);
     /* Brand Colors */
+    --brand-primary: #23413e; /* Primary brand color */
+    --brand-secondary: #22c55f88; /* Secondary brand color with 53% opacity */
     --brand-color: #23413e; /* Primary color in light mode */
 }
 
@@ -24,6 +26,8 @@
     --border-secondary: #6b7280;
     --shadow: rgba(0, 0, 0, 0.4);
     /* Brand Colors */
+    --brand-primary: #23413e; /* Primary brand color */
+    --brand-secondary: #22c55f88; /* Secondary brand color with 53% opacity */
     --brand-color: #22c55f88; /* Secondary color in dark mode */
 }
 
@@ -51,6 +55,32 @@
 
 .border-brand-color {
     border-color: var(--brand-color);
+}
+
+/* Brand Primary Color Classes */
+.text-brand-primary {
+    color: var(--brand-primary);
+}
+
+.bg-brand-primary {
+    background-color: var(--brand-primary);
+}
+
+.border-brand-primary {
+    border-color: var(--brand-primary);
+}
+
+/* Brand Secondary Color Classes */
+.text-brand-secondary {
+    color: var(--brand-secondary);
+}
+
+.bg-brand-secondary {
+    background-color: var(--brand-secondary);
+}
+
+.border-brand-secondary {
+    border-color: var(--brand-secondary);
 }
 
 body {
@@ -124,27 +154,33 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     margin: 1rem;
-    border: 1px solid var(--border-primary);
+    border: 2px solid var(--brand-color);
+}
+
+/* Modal header styling with brand colors */
+.modal-content .flex.justify-between.items-center {
+    border-bottom: 1px solid var(--brand-color);
+    padding-bottom: 1rem;
 }
 
 .schedule-grid {
     display: grid;
     grid-template-columns: 100px repeat(7, 1fr);
     gap: 0;
-    background-color: #f3f4f6;
-    border: 1px solid #e5e7eb;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--brand-color);
     border-radius: 0.5rem;
     overflow: hidden;
 }
 
 .time-slot {
     min-height: 60px;
-    background-color: white;
+    background-color: var(--bg-primary);
     padding: 0.25rem;
     transition: all 0.15s ease;
     position: relative;
-    border-right: 1px solid #f3f4f6;
-    border-bottom: 1px solid #f3f4f6;
+    border-right: 1px solid var(--brand-color);
+    border-bottom: 1px solid var(--brand-color);
 }
 
 .time-slot:hover {
@@ -251,44 +287,52 @@ body {
 }
 
 .view-btn {
-    background-color: #f3f4f6;
-    color: #6b7280;
+    background-color: var(--brand-color);
+    color: white;
     transition: all 0.2s ease;
 }
 
 .view-btn:hover {
-    background-color: #e5e7eb;
+    opacity: 0.9;
 }
 
 .view-btn.active {
-    background-color: #3b82f6;
+    background-color: var(--brand-color);
     color: white;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--brand-color);
 }
 
 .month-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1px;
-    background-color: #e5e7eb;
+    background-color: var(--brand-color);
+    border: 1px solid var(--brand-color);
     border-radius: 0.5rem;
     overflow: hidden;
 }
 
 .month-header {
-    background-color: #f8fafc;
+    background-color: var(--brand-color);
     padding: 0.75rem;
     font-weight: 600;
-    color: #374151;
+    color: white;
     text-align: center;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--brand-color);
     font-size: 0.875rem;
+}
+
+/* Dark mode specific overrides for month view */
+[data-theme="dark"] .month-header {
+    color: white;
 }
 
 .month-day {
     min-height: 120px;
-    background-color: white;
+    background-color: var(--bg-primary);
     padding: 0.5rem;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--brand-color);
     position: relative;
     overflow: hidden;
 }
@@ -310,7 +354,7 @@ body {
 
 .month-day.other-month {
     background-color: #ffffff;
-    opacity: 0.35;
+    opacity: 0.25;
 }
 
 .month-day.today {
@@ -376,12 +420,12 @@ body {
 }
 
 .time-header {
-    background-color: #f8fafc;
+    background-color: var(--brand-color);
     padding: 0.375rem 0.25rem;
     font-weight: 500;
-    color: #475569;
-    border-right: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    color: white;
+    border-right: 1px solid var(--brand-color);
+    border-bottom: 1px solid var(--brand-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -390,39 +434,58 @@ body {
 }
 
 .day-header {
-    background-color: #f8fafc;
+    background-color: var(--brand-color);
     padding: 0.75rem 0.5rem;
     font-weight: 600;
-    color: #374151;
+    color: white;
     text-align: center;
-    border-right: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid var(--brand-color);
+    border-bottom: 1px solid var(--brand-color);
     font-size: 0.875rem;
+}
+
+/* Dark mode specific overrides for week view headers */
+[data-theme="dark"] .time-header,
+[data-theme="dark"] .day-header {
+    color: white;
 }
 
 @media (max-width: 768px) {
     .schedule-grid {
         grid-template-columns: 70px repeat(7, minmax(80px, 1fr));
+        border: 1px solid var(--brand-color);
     }
     
     .time-header {
         font-size: 0.625rem;
         padding: 0.25rem;
+        background-color: var(--brand-color);
+        color: white;
+        border-right: 1px solid var(--brand-color);
+        border-bottom: 1px solid var(--brand-color);
     }
     
     .day-header {
         font-size: 0.75rem;
         padding: 0.5rem 0.25rem;
+        background-color: var(--brand-color);
+        color: white;
+        border-right: 1px solid var(--brand-color);
+        border-bottom: 1px solid var(--brand-color);
     }
     
     .time-slot {
         min-height: 50px;
         padding: 0.125rem;
+        background-color: var(--bg-primary);
+        border-right: 1px solid var(--brand-color);
+        border-bottom: 1px solid var(--brand-color);
     }
     
     .modal-content {
         margin: 0.5rem;
         padding: 1rem;
+        border: 2px solid var(--brand-color);
     }
     
     .flex.flex-wrap {
@@ -433,12 +496,36 @@ body {
     .month-day {
         min-height: 100px;
         padding: 0.25rem;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--brand-color);
     }
     
     .shift-card {
         font-size: 0.625rem;
         padding: 0.25rem;
         margin-bottom: 0.125rem;
+    }
+    
+    .month-grid {
+        border: 1px solid var(--brand-color);
+    }
+    
+    .month-header {
+        background-color: var(--brand-color);
+        color: white;
+        border-bottom: 1px solid var(--brand-color);
+    }
+    
+    /* Dark mode mobile overrides */
+    [data-theme="dark"] .time-header,
+    [data-theme="dark"] .day-header,
+    [data-theme="dark"] .month-header {
+        color: white;
+    }
+    
+    [data-theme="dark"] .time-slot,
+    [data-theme="dark"] .month-day {
+        background-color: var(--bg-primary);
     }
 }
 
@@ -1052,7 +1139,7 @@ body {
 /* Dark mode pale cells (days from other months) */
 [data-theme="dark"] .month-day.other-month {
     background-color: #374151 !important; /* requested pale color */
-    opacity: 1 !important; /* avoid washed-out look in dark mode */
+    opacity: 0.4 !important; /* lowered opacity for better visibility */
 }
 
 [data-theme="dark"] .month-header {
@@ -1552,18 +1639,20 @@ body {
 
 /* Statistics View Controls */
 .stats-view-btn {
-    background-color: #f3f4f6;
-    color: #6b7280;
+    background-color: var(--brand-color);
+    color: white;
     transition: all 0.2s ease;
 }
 
 .stats-view-btn:hover {
-    background-color: #e5e7eb;
+    opacity: 0.9;
 }
 
 .stats-view-btn.active {
-    background-color: #3b82f6;
+    background-color: var(--brand-color);
     color: white;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--brand-color);
 }
 
 /* Chart scrolling */
@@ -1614,17 +1703,31 @@ body {
 
 /* Dark mode statistics controls */
 [data-theme="dark"] .stats-view-btn {
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
+    background-color: var(--brand-color);
+    color: white;
 }
 
 [data-theme="dark"] .stats-view-btn:hover {
-    background-color: var(--border-primary);
+    opacity: 0.9;
 }
 
 [data-theme="dark"] .stats-view-btn.active {
-    background-color: #3b82f6;
+    background-color: var(--brand-color);
     color: white;
+    font-weight: bold;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--brand-color);
+}
+
+/* Statistics table header */
+#statisticsPage thead th {
+    background-color: var(--brand-color) !important;
+    color: white !important;
+    border-bottom: 2px solid var(--brand-color) !important;
+}
+
+/* Dark mode statistics table header */
+[data-theme="dark"] #statisticsPage thead th {
+    color: white !important;
 }
 
 /* Month view holiday styles */
