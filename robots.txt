@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /index_angol.html
+Disallow: /login.html
+Disallow: /signup.html
+Disallow: /profile.html
+Disallow: /supabase.js
+Disallow: /app.js
+Disallow: /debug.js
+Disallow: /clear_all_data.js
+Disallow: /clear_data.html
+Disallow: /final_test.js
+Disallow: /integration_test.js
+Disallow: /test_shift_overlap.js
+Disallow: /supabase_setup.sql
+Disallow: /supabase_signup_username_problem_solved.sql
+
+Sitemap: https://schedulix.hu/sitemap.xml
+
+Host: schedulix.hu

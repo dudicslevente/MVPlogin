@@ -1,0 +1,40 @@
+{
+  "short_name": "Schedulix",
+  "name": "Schedulix Beosztáskezelő",
+  "description": "Egyszerű munkaidő és beosztás készítése. Kezeld könnyedén az alkalmazottjaidat!",
+  "icons": [
+    {
+      "src": "s-fekete.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "s-feher.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "s-schedulix-korvonalas.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "s-schedulix-korvonalas.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#23413e",
+  "lang": "hu",
+  "dir": "ltr",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "utilities"]
+}
