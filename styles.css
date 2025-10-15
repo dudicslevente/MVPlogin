@@ -1849,3 +1849,55 @@ table thead.bg-gray-50:hover {
 [data-theme="dark"] #mobileNotificationModal .text-gray-600 {
     color: var(--text-secondary);
 }
+
+/* Welcome Notification Modal */
+#welcomeModal .modal-content {
+    border: 2px solid var(--brand-color);
+}
+
+#welcomeModal .flex.items-center {
+    border-bottom: 1px solid var(--brand-color);
+    padding-bottom: 1rem;
+}
+
+#welcomeModal .bg-blue-50 {
+    background-color: #dbeafe;
+}
+
+#welcomeModal .text-blue-800 {
+    color: #1e40af;
+}
+
+#welcomeModal .text-blue-700 {
+    color: #1d4ed8;
+}
+
+/* Dark mode welcome notification modal */
+[data-theme="dark"] #welcomeModal .modal-content {
+    background-color: var(--bg-primary);
+    border-color: var(--brand-color);
+}
+
+[data-theme="dark"] #welcomeModal .flex.items-center {
+    border-color: var(--brand-color);
+}
+
+[data-theme="dark"] #welcomeModal .text-gray-900 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #welcomeModal .text-gray-600 {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] #welcomeModal .bg-blue-50 {
+    background-color: #1e3a8a;
+}
+
+[data-theme="dark"] #welcomeModal .text-blue-800 {
+    color: #93c5fd;
+}
+
+[data-theme="dark"] #welcomeModal .text-blue-700 {
+    color: #bfdbfe;
+}

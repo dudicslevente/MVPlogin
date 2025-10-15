@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   username text unique not null,
   display_name text,
   avatar_url text,
+  welcome_notification_shown boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

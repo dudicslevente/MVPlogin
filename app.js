@@ -41,6 +41,9 @@ class ScheduleManager {
         // Check for mobile and show notification if needed
         this.checkMobileAndNotify();
         
+        // Check if this is the user's first login and show welcome notification
+        this.checkFirstLoginAndWelcome();
+        
         // Render critical UI immediately
         this.renderEmployeeList();
         this.renderSchedule();
@@ -55,6 +58,24 @@ class ScheduleManager {
                 feather.replace();
             }
         }, 0);
+    }
+
+    // Check if this is the user's first login and show welcome notification
+    async checkFirstLoginAndWelcome() {
+        try {
+            // Check if welcome notification should be shown using database
+            const shouldShowWelcome = await window.checkAndMarkWelcomeNotification();
+            
+            // Show welcome notification if needed
+            if (shouldShowWelcome) {
+                // Small delay to ensure UI is ready
+                setTimeout(() => {
+                    this.showWelcomeNotification();
+                }, 1000);
+            }
+        } catch (error) {
+            console.error('Error checking welcome notification status:', error);
+        }
     }
 
     // Data Management
@@ -4610,6 +4631,59 @@ avigation
         this.showNotification('Folytathatod a használatot, de az asztali verzió javasolt a legjobb élmény érdekében.', 'info');
     }
 
+    closeWelcomeModal() {
+        const modal = document.getElementById('welcomeModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+            
+            // Mark welcome notification as shown in localStorage
+            localStorage.setItem('scheduleManager_welcomeNotificationShown', 'true');
+            
+            // Also update the database to ensure cross-device consistency
+            if (typeof window.markWelcomeNotificationAsShown === 'function') {
+                window.markWelcomeNotificationAsShown();
+            }
+        }
+    }
+    // Check if this is the user's first login and show welcome notification
+    checkFirstLoginAndWelcome() {
+        // Check if welcome notification has already been shown to this user
+        const welcomeNotificationShown = localStorage.getItem('scheduleManager_welcomeNotificationShown');
+        
+        // Show welcome notification if not shown before
+        if (!welcomeNotificationShown) {
+            // Small delay to ensure UI is ready
+            setTimeout(() => {
+                this.showWelcomeNotification();
+            }, 1000);
+        }
+    }
+
+    showWelcomeNotification() {
+        const modal = document.getElementById('welcomeModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+            
+            // Initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+    }
+
+    closeWelcomeModal() {
+        const modal = document.getElementById('welcomeModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+            
+            // Mark welcome notification as shown in localStorage
+            localStorage.setItem('scheduleManager_welcomeNotificationShown', 'true');
+        }
+    }
+
     // Department Management
     openDepartmentModal() {
         const modal = document.getElementById('departmentModal');
@@ -5384,6 +5458,11 @@ function closeMobileNotification() {
 
 function redirectToDesktop() {
     scheduleManager.redirectToDesktop();
+}
+
+// Global functions for welcome notification
+function closeWelcomeModal() {
+    scheduleManager.closeWelcomeModal();
 }
 
 // Global functions for statistics view switching

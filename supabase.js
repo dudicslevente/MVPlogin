@@ -65,7 +65,7 @@ async function signUpWithEmail(email, password, username) {
         // Try to update the existing profile (created by the trigger)
         let { data: updateData, error: updateError } = await window.supabaseClient
           .from('profiles')
-          .update({ username, display_name: username })
+          .update({ username, display_name: username, welcome_notification_shown: false })
           .eq('id', user.id)
           .select();
         
@@ -80,7 +80,7 @@ async function signUpWithEmail(email, password, username) {
           console.log('Update failed, trying insert:', updateError);
           const { data: insertData, error: insertError } = await window.supabaseClient
             .from('profiles')
-            .insert({ id: user.id, username, display_name: username })
+            .insert({ id: user.id, username, display_name: username, welcome_notification_shown: false })
             .select();
           
           if (!insertError && insertData && insertData.length > 0) {
@@ -384,6 +384,77 @@ async function uploadProfileAvatar(file) {
   return pub.publicUrl;
 }
 
+// Function to check if welcome notification has been shown and mark it as shown
+async function checkAndMarkWelcomeNotification() {
+  try {
+    const session = await getSession();
+    if (!session) return false;
+    
+    const userId = session.user.id;
+    
+    // Get the current welcome notification status
+    const { data, error } = await window.supabaseClient
+      .from('profiles')
+      .select('welcome_notification_shown')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error checking welcome notification status:', error);
+      return false;
+    }
+    
+    // If welcome notification hasn't been shown yet, return true (should show it)
+    // and mark it as shown in the database
+    if (!data || !data.welcome_notification_shown) {
+      // Mark welcome notification as shown
+      const { error: updateError } = await window.supabaseClient
+        .from('profiles')
+        .update({ welcome_notification_shown: true })
+        .eq('id', userId);
+      
+      if (updateError) {
+        console.error('Error updating welcome notification status:', updateError);
+      }
+      
+      // Return true to indicate that welcome notification should be shown
+      return true;
+    }
+    
+    // Welcome notification has already been shown
+    return false;
+  } catch (err) {
+    console.error('Error in checkAndMarkWelcomeNotification:', err);
+    return false;
+  }
+}
+
+// Function to directly mark welcome notification as shown (used when closing the modal)
+async function markWelcomeNotificationAsShown() {
+  try {
+    const session = await getSession();
+    if (!session) return false;
+    
+    const userId = session.user.id;
+    
+    // Mark welcome notification as shown
+    const { error } = await window.supabaseClient
+      .from('profiles')
+      .update({ welcome_notification_shown: true })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating welcome notification status:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Error in markWelcomeNotificationAsShown:', err);
+    return false;
+  }
+}
+
 // Expose to window for app.js hooks
 window.cloudSyncSave = cloudSyncSave;
 window.loadAppStateAndSync = loadAppStateAndSync;
@@ -394,6 +465,8 @@ window.getSession = getSession;
 window.uploadProfileAvatar = uploadProfileAvatar;
 window.loadProfileDataAfterSignup = loadProfileDataAfterSignup;
 window.loadProfileDataIntoLocalStorage = loadProfileDataIntoLocalStorage;
+window.checkAndMarkWelcomeNotification = checkAndMarkWelcomeNotification;
+window.markWelcomeNotificationAsShown = markWelcomeNotificationAsShown;
 
 // Convenience: logout and redirect to login
 window.logoutUser = async function() {
