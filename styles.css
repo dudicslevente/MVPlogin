@@ -51,6 +51,7 @@
 
 .hover\:bg-brand-color:hover {
     background-color: var(--brand-color);
+    opacity: 0.9;
 }
 
 .border-brand-color {

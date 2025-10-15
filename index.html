@@ -406,7 +406,7 @@
                         Részlegek Kezelése
                     </button>
                     <button onclick="openEmployeeModal()"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                        class="px-4 py-2 bg-brand-color text-white rounded-md hover:bg-brand-color flex items-center">
                         <i data-feather="plus" class="mr-2"></i>
                         Alkalmazott Hozzáadása
                     </button>
@@ -778,7 +778,7 @@
                     class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                     Mégse
                 </button>
-                <button onclick="saveEmployee()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                <button onclick="saveEmployee()" class="px-4 py-2 bg-brand-color text-white rounded-md hover:bg-brand-color">
                     Alkalmazott mentése
                 </button>
             </div>
@@ -861,12 +861,12 @@
                     <input type="file" id="importFile" accept=".json,.csv" class="form-input">
                     <p class="text-xs text-gray-500 mt-1">Támogatott formátumok: JSON, CSV</p>
                 </div>
-                <div class="bg-blue-50 p-4 rounded-md">
-                    <h4 class="text-sm font-medium text-blue-800 mb-2">Importálási Utasítások:</h4>
-                    <ul class="text-xs text-blue-700 space-y-1">
-                        <li>• JSON: Exportálás ebből az alkalmazásból vagy kompatibilis formátum</li>
+                <div class=" rounded-md">
+                    <h4 class="text-sm font-medium text-blue-200 mb-2">Importálási Utasítások:</h4>
+                    <ul class="text-xs text-blue-200 space-y-1">
+                        <li>• JSON: Exportálás ebből az alkalmazásból vagy kompatibilis formátumból</li>
                         <li>• CSV: Alkalmazott, Dátum, Kezdés Ideje, Befejezés Ideje, Pozició, Típus</li>
-                        <li>• A meglévő műszakbeosztások összefonva lesznek az importált adatokkal</li>
+                        <li>• A meglévő műszakbeosztások össze lesznek fonva az importált adatokkal</li>
                     </ul>
                 </div>
             </div>
@@ -876,7 +876,7 @@
                     Mégse
                 </button>
                 <button onclick="processImport()"
-                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    class="px-4 py-2 bg-brand-color text-white rounded-md hover:bg-brand-color">
                     Importálás
                 </button>
             </div>

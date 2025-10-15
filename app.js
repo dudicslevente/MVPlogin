@@ -2782,7 +2782,7 @@ avigation
             console.log('Showing confirmation dialog');
             // Show confirmation dialog
             this.showConfirmation(
-                'Műszakbeosztás Felülírása vagy Összefűzése',
+                'Műszakbeosztás Felülírása vagy összefűzése',
                 'Ez a hét már tartalmaz műszakbeosztást. Szeretnéd felülírni a meglévő beosztást, vagy összefűzni az új beosztással?',
                 () => {
                     // Replace option
@@ -2795,7 +2795,7 @@ avigation
                     this.performWeekPaste(weekKey, weekDates, 'merge');
                 },
                 'Összefűzés',
-                'bg-blue-600 hover:bg-blue-700'
+                'bg-brand-color hover:bg-brand-color'
             );
         } else {
             console.log('No existing schedules, just pasting');
@@ -3035,7 +3035,7 @@ avigation
                 this.showNotification('Hét sikeresen beillesztve!', 'success');
             },
             'Beillesztés',
-            'bg-blue-600 hover:bg-blue-700'
+            'bg-brand-color hover:bg-brand-color'
         );
     }
 
