@@ -347,11 +347,21 @@ window.loadProfileDataIntoLocalStorage = loadProfileDataIntoLocalStorage;
 // Convenience: logout and redirect to login
 window.logoutUser = async function() {
   try {
+    // Ensure all data is saved before logout
+    if (typeof window.cloudSyncSave === 'function') {
+      await window.cloudSyncSave();
+      // Add a small delay to ensure the save completes
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     await signOut();
   } catch (e) {
     console.error(e);
   } finally {
-    try { localStorage.clear(); } catch (_) {}
+    try { 
+      // Clear localStorage after successful logout
+      localStorage.clear(); 
+    } catch (_) {}
     window.location.href = 'login.html';
   }
 }
