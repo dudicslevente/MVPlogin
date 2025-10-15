@@ -33,18 +33,25 @@ class ScheduleManager {
     }
 
     init() {
+        // Defer non-critical initialization to improve initial load time
         this.loadData();
         this.loadTheme();
         this.setupEventListeners();
+        
+        // Render critical UI immediately
         this.renderEmployeeList();
         this.renderSchedule();
-        this.updateStatistics();
-        this.updatePeriodLabels();
         
-        // Initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
+        // Defer non-critical updates
+        setTimeout(() => {
+            this.updateStatistics();
+            this.updatePeriodLabels();
+            
+            // Initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }, 0);
     }
 
     // Data Management
@@ -61,65 +68,90 @@ class ScheduleManager {
         const savedDisplayName = localStorage.getItem('scheduleManager_displayName');
         
         if (savedEmployees) {
-            this.employees = JSON.parse(savedEmployees);
-            // Ensure all employees have the required properties for backward compatibility
-            this.employees = this.employees.map(emp => {
-                // Ensure employee has all required properties
-                const updatedEmp = { ...emp };
-                
-                // Ensure customColor property exists
-                if (!updatedEmp.hasOwnProperty('customColor')) {
-                    updatedEmp.customColor = null;
-                }
-                
-                // Ensure default time properties exist
-                if (!updatedEmp.hasOwnProperty('defaultStartTime')) {
-                    updatedEmp.defaultStartTime = '08:00';
-                }
-                
-                if (!updatedEmp.hasOwnProperty('defaultEndTime')) {
-                    updatedEmp.defaultEndTime = '16:00';
-                }
-                
-                // Ensure profilePic property exists
-                if (!updatedEmp.hasOwnProperty('profilePic')) {
-                    updatedEmp.profilePic = null;
-                }
-                
-                // Ensure nickname property exists
-                if (!updatedEmp.hasOwnProperty('nickname')) {
-                    updatedEmp.nickname = '';
-                }
-                
-                return updatedEmp;
-            });
+            try {
+                this.employees = JSON.parse(savedEmployees);
+                // Ensure all employees have the required properties for backward compatibility
+                this.employees = this.employees.map(emp => {
+                    // Ensure employee has all required properties
+                    const updatedEmp = { ...emp };
+                    
+                    // Ensure customColor property exists
+                    if (!updatedEmp.hasOwnProperty('customColor')) {
+                        updatedEmp.customColor = null;
+                    }
+                    
+                    // Ensure default time properties exist
+                    if (!updatedEmp.hasOwnProperty('defaultStartTime')) {
+                        updatedEmp.defaultStartTime = '08:00';
+                    }
+                    
+                    if (!updatedEmp.hasOwnProperty('defaultEndTime')) {
+                        updatedEmp.defaultEndTime = '16:00';
+                    }
+                    
+                    // Ensure profilePic property exists
+                    if (!updatedEmp.hasOwnProperty('profilePic')) {
+                        updatedEmp.profilePic = null;
+                    }
+                    
+                    // Ensure nickname property exists
+                    if (!updatedEmp.hasOwnProperty('nickname')) {
+                        updatedEmp.nickname = '';
+                    }
+                    
+                    return updatedEmp;
+                });
+            } catch (e) {
+                console.error('Error parsing employees data:', e);
+                this.employees = [];
+            }
         } else {
             // Instead of loading sample employees, start with an empty array
             this.employees = [];
         }
         
         if (savedSchedules) {
-            this.schedules = JSON.parse(savedSchedules);
+            try {
+                this.schedules = JSON.parse(savedSchedules);
+            } catch (e) {
+                console.error('Error parsing schedules data:', e);
+                this.schedules = {};
+            }
         } else {
             this.schedules = {};
         }
         
         if (savedDepartments) {
-            this.departments = JSON.parse(savedDepartments);
+            try {
+                this.departments = JSON.parse(savedDepartments);
+            } catch (e) {
+                console.error('Error parsing departments data:', e);
+                this.departments = [];
+            }
         } else {
             // Instead of loading default departments, start with an empty array
             this.departments = [];
         }
         
         if (savedHolidays) {
-            this.holidays = JSON.parse(savedHolidays);
+            try {
+                this.holidays = JSON.parse(savedHolidays);
+            } catch (e) {
+                console.error('Error parsing holidays data:', e);
+                this.holidays = {};
+            }
         } else {
             this.holidays = {};
             this.holidays[this.currentYear] = this.getDefaultHolidaysForYear(this.currentYear);
         }
         
         if (savedMandatoryVacations) {
-            this.mandatoryVacations = JSON.parse(savedMandatoryVacations);
+            try {
+                this.mandatoryVacations = JSON.parse(savedMandatoryVacations);
+            } catch (e) {
+                console.error('Error parsing mandatory vacations data:', e);
+                this.mandatoryVacations = {};
+            }
         } else {
             this.mandatoryVacations = {};
         }
@@ -161,18 +193,28 @@ class ScheduleManager {
     }
 
     saveData() {
-        localStorage.setItem('scheduleManager_employees', JSON.stringify(this.employees));
-        localStorage.setItem('scheduleManager_schedules', JSON.stringify(this.schedules));
-        localStorage.setItem('scheduleManager_departments', JSON.stringify(this.departments));
-        localStorage.setItem('scheduleManager_holidays', JSON.stringify(this.holidays));
-        localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify(this.mandatoryVacations));
-        try {
-            if (window.cloudSyncSave) {
-                window.cloudSyncSave();
-            }
-        } catch (e) {
-            console.error('Cloud sync failed:', e);
+        // Debounce saves to prevent excessive writes
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
         }
+        
+        this.saveTimeout = setTimeout(() => {
+            localStorage.setItem('scheduleManager_employees', JSON.stringify(this.employees));
+            localStorage.setItem('scheduleManager_schedules', JSON.stringify(this.schedules));
+            localStorage.setItem('scheduleManager_departments', JSON.stringify(this.departments));
+            localStorage.setItem('scheduleManager_holidays', JSON.stringify(this.holidays));
+            localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify(this.mandatoryVacations));
+            try {
+                if (window.cloudSyncSave) {
+                    window.cloudSyncSave();
+                }
+            } catch (e) {
+                console.error('Cloud sync failed:', e);
+            }
+            
+            // Clean up timeout reference
+            this.saveTimeout = null;
+        }, 100); // Debounce for 100ms
     }
 
     getSampleEmployees() {
@@ -851,7 +893,8 @@ avigation
         const container = document.getElementById('employeeList');
         if (!container) return;
         
-        container.innerHTML = '';
+        // Use DocumentFragment for better performance when adding multiple elements
+        const fragment = document.createDocumentFragment();
         
         const activeEmployees = this.employees.filter(emp => emp.isActive);
         
@@ -920,8 +963,12 @@ avigation
                 </div>
             `;
             
-            container.appendChild(card);
+            fragment.appendChild(card);
         });
+        
+        // Clear container and append all elements at once
+        container.innerHTML = '';
+        container.appendChild(fragment);
         
         // Make employee list sortable
         if (typeof Sortable !== 'undefined') {
@@ -942,16 +989,19 @@ avigation
     }
 
     renderSchedule() {
-        if (this.currentView === 'week') {
-            this.renderWeekView();
-        } else {
-            this.renderMonthView();
-        }
-        
-        // Initialize feather icons after rendering schedule
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
+        // Use requestAnimationFrame to defer rendering and improve responsiveness
+        requestAnimationFrame(() => {
+            if (this.currentView === 'week') {
+                this.renderWeekView();
+            } else {
+                this.renderMonthView();
+            }
+            
+            // Initialize feather icons after rendering schedule
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        });
     }
 
     renderWeekView() {

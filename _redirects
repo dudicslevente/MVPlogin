@@ -8,6 +8,8 @@
 # Remove this if you prefer URLs without trailing slashes
 /*   /:splat/   301
 /*   /:splat/   301
+
+
 /en       /index_angol.html  200
 /en/*     /index_angol.html  200
 /hu       /index.html  200

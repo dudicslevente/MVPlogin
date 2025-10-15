@@ -28,14 +28,14 @@ async function signUpWithEmail(email, password, username) {
     // Use a more aggressive approach to ensure profile is updated
     // Try multiple times with different strategies
     const updateProfile = async (attempt) => {
-      if (attempt > 10) {
-        console.error('Failed to update profile after 10 attempts');
+      if (attempt > 5) { // Reduced from 10 to 5 attempts
+        console.error('Failed to update profile after 5 attempts');
         return;
       }
       
       try {
         // Wait a bit for auth to fully complete and trigger to run
-        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Reduced from 1500ms to 500ms
         
         console.log(`Attempt ${attempt} to update profile`);
         
@@ -66,7 +66,7 @@ async function signUpWithEmail(email, password, username) {
           } else if (insertError) {
             console.error('Profile creation error:', insertError);
             // Try again with a different approach
-            setTimeout(() => updateProfile(attempt + 1), 2000);
+            setTimeout(() => updateProfile(attempt + 1), 1000); // Reduced from 2000ms to 1000ms
           }
         } else {
           console.log('Profile updated successfully');
@@ -75,12 +75,12 @@ async function signUpWithEmail(email, password, username) {
         console.error(`Error updating profile (attempt ${attempt}):`, err);
         
         // Try again
-        setTimeout(() => updateProfile(attempt + 1), 2000);
+        setTimeout(() => updateProfile(attempt + 1), 1000); // Reduced from 2000ms to 1000ms
       }
     };
     
     // Start the update process
-    setTimeout(() => updateProfile(1), 500);
+    setTimeout(() => updateProfile(1), 200); // Reduced from 500ms to 200ms
   }
   return data;
 }
@@ -95,7 +95,7 @@ async function loadProfileDataAfterSignup() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 20; // Increase attempts for login scenarios
+    const maxAttempts = 10; // Reduced from 20 to 10 attempts
     let data, error;
     
     do {
@@ -109,23 +109,23 @@ async function loadProfileDataAfterSignup() {
         console.error(`Error loading profile (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
         }
       } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         // This might happen if the async update from signup hasn't completed yet
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
         }
       } else if ((!data.username || data.username === '') && (!data.display_name || data.display_name === '')) {
         // Profile exists but is empty, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
         }
       } else {
         // Success, break out of loop
@@ -178,7 +178,7 @@ async function loadProfileDataIntoLocalStorage() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 5; // Reduced from 10 to 5 attempts
     let data, error;
     
     do {
@@ -192,17 +192,17 @@ async function loadProfileDataIntoLocalStorage() {
         console.error(`Error loading profile data (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
         }
       } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
         }
       } else {
         // Success, break out of loop
@@ -249,7 +249,7 @@ async function signInWithEmail(email, password) {
   // Load profile data after login to ensure it's available
   setTimeout(async () => {
     await loadProfileDataIntoLocalStorage();
-  }, 1000);
+  }, 300); // Reduced from 1000ms to 300ms
   return data;
 }
 
@@ -299,23 +299,34 @@ async function loadAppStateAndSync() {
   await loadProfileDataIntoLocalStorage();
 }
 
+let syncTimeout;
+
 async function cloudSyncSave() {
-  try {
-    const session = await getSession();
-    if (!session) return; // not logged in
-    const userId = session.user.id;
-    const payload = {
-      scheduleManager_employees: JSON.parse(localStorage.getItem('scheduleManager_employees') || '[]'),
-      scheduleManager_schedules: JSON.parse(localStorage.getItem('scheduleManager_schedules') || '{}'),
-      scheduleManager_departments: JSON.parse(localStorage.getItem('scheduleManager_departments') || '[]'),
-      scheduleManager_theme: localStorage.getItem('scheduleManager_theme') || 'light',
-      scheduleManager_currency: localStorage.getItem('scheduleManager_currency') || 'Ft',
-    };
-    const { error } = await window.supabaseClient.from('app_state').upsert({ user_id: userId, data: payload }).select();
-    if (error) throw error;
-  } catch (e) {
-    console.error('cloudSyncSave error', e);
+  // Debounce sync requests to prevent excessive API calls
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
   }
+  
+  syncTimeout = setTimeout(async () => {
+    try {
+      const session = await getSession();
+      if (!session) return; // not logged in
+      const userId = session.user.id;
+      const payload = {
+        scheduleManager_employees: JSON.parse(localStorage.getItem('scheduleManager_employees') || '[]'),
+        scheduleManager_schedules: JSON.parse(localStorage.getItem('scheduleManager_schedules') || '{}'),
+        scheduleManager_departments: JSON.parse(localStorage.getItem('scheduleManager_departments') || '[]'),
+        scheduleManager_theme: localStorage.getItem('scheduleManager_theme') || 'light',
+        scheduleManager_currency: localStorage.getItem('scheduleManager_currency') || 'Ft',
+      };
+      const { error } = await window.supabaseClient.from('app_state').upsert({ user_id: userId, data: payload }).select();
+      if (error) throw error;
+    } catch (e) {
+      console.error('cloudSyncSave error', e);
+    } finally {
+      syncTimeout = null;
+    }
+  }, 500); // Debounce for 500ms
 }
 
 // Upload avatar helper (Supabase Storage)
@@ -351,7 +362,7 @@ window.logoutUser = async function() {
     if (typeof window.cloudSyncSave === 'function') {
       await window.cloudSyncSave();
       // Add a small delay to ensure the save completes
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 500ms to 300ms
     }
     
     await signOut();

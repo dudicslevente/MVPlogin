@@ -185,21 +185,28 @@
                     window.location.href = 'login.html';
                     return;
                 }
-                await loadAppStateAndSync();
-                // Load profile data to ensure it's available
-                await loadProfileDataAfterSignup();
-                // Add a small delay to ensure profile data is properly loaded
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                // Dynamically load app.js, then initialize
+                
+                // Optimized loading sequence - start app initialization immediately
+                // Load app state and profile data in parallel
+                const appStatePromise = loadAppStateAndSync();
+                const profileDataPromise = loadProfileDataAfterSignup();
+                
+                // Initialize the app immediately without waiting for data sync
                 const script = document.createElement('script');
                 script.src = 'app.js';
                 script.onload = () => {
                     window.BLOCK_APP_INIT = false;
                     if (typeof ScheduleManager !== 'undefined') {
                         window.scheduleManager = new ScheduleManager();
+                        // Update greeting after app initialization
+                        setTimeout(() => updateGreeting(), 100);
                     }
                 };
                 document.body.appendChild(script);
+                
+                // Continue with data loading in background
+                await Promise.all([appStatePromise, profileDataPromise]);
+                
             } catch (e) {
                 console.error('Auth gate error', e);
                 window.location.href = 'login.html';
