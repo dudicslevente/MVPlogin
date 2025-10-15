@@ -11,6 +11,29 @@ window.supabaseClient = window.supabaseClient || supabase.createClient(window.SU
 
 // Auth helpers (email/password). Username is stored in the profiles table only.
 async function signUpWithEmail(email, password, username) {
+  // Clear all existing schedule manager data to ensure fresh start for new user
+  const localStorageKeys = [
+    'scheduleManager_employees',
+    'scheduleManager_schedules',
+    'scheduleManager_departments',
+    'scheduleManager_holidays',
+    'scheduleManager_mandatory_vacations',
+    'scheduleManager_currency',
+    'scheduleManager_theme',
+    'scheduleManager_username',
+    'scheduleManager_displayName'
+  ];
+  
+  localStorageKeys.forEach(key => localStorage.removeItem(key));
+  
+  // Set default empty values for new user
+  localStorage.setItem('scheduleManager_employees', JSON.stringify([]));
+  localStorage.setItem('scheduleManager_schedules', JSON.stringify({}));
+  localStorage.setItem('scheduleManager_departments', JSON.stringify([]));
+  localStorage.setItem('scheduleManager_holidays', JSON.stringify({}));
+  localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify({}));
+  localStorage.setItem('scheduleManager_currency', 'Ft');
+  
   const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   const user = data.user;
@@ -246,10 +269,9 @@ async function loadProfileDataIntoLocalStorage() {
 async function signInWithEmail(email, password) {
   const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  // Load profile data after login to ensure it's available
-  setTimeout(async () => {
-    await loadProfileDataIntoLocalStorage();
-  }, 300); // Reduced from 1000ms to 300ms
+  // Load app state and profile data after login to ensure it's available
+  await loadAppStateAndSync();
+  await loadProfileDataIntoLocalStorage();
   return data;
 }
 
@@ -279,19 +301,37 @@ async function loadAppStateAndSync() {
     .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error; // ignore not found
 
+  // Clear existing localStorage data to ensure clean state for new users
+  const localStorageKeys = [
+    'scheduleManager_employees',
+    'scheduleManager_schedules',
+    'scheduleManager_departments',
+    'scheduleManager_holidays',
+    'scheduleManager_mandatory_vacations',
+    'scheduleManager_currency'
+  ];
+  
+  // Always clear data first to ensure clean state
+  localStorageKeys.forEach(key => localStorage.removeItem(key));
+
   if (rows && rows.data) {
     // Load remote into localStorage
     const d = rows.data || {};
     if (d.scheduleManager_employees) localStorage.setItem('scheduleManager_employees', JSON.stringify(d.scheduleManager_employees));
     if (d.scheduleManager_schedules) localStorage.setItem('scheduleManager_schedules', JSON.stringify(d.scheduleManager_schedules));
     if (d.scheduleManager_departments) localStorage.setItem('scheduleManager_departments', JSON.stringify(d.scheduleManager_departments));
+    if (d.scheduleManager_holidays) localStorage.setItem('scheduleManager_holidays', JSON.stringify(d.scheduleManager_holidays));
+    if (d.scheduleManager_mandatory_vacations) localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify(d.scheduleManager_mandatory_vacations));
     if (d.scheduleManager_currency) localStorage.setItem('scheduleManager_currency', d.scheduleManager_currency);
   } else {
-    // No remote yet: push current local into remote (or empty defaults)
+    // No remote yet: set empty defaults for new users
+    localStorage.setItem('scheduleManager_employees', JSON.stringify([]));
+    localStorage.setItem('scheduleManager_schedules', JSON.stringify({}));
+    localStorage.setItem('scheduleManager_departments', JSON.stringify([]));
+    localStorage.setItem('scheduleManager_holidays', JSON.stringify({}));
+    localStorage.setItem('scheduleManager_mandatory_vacations', JSON.stringify({}));
     // Set default currency to Ft for new users
-    if (!localStorage.getItem('scheduleManager_currency')) {
-      localStorage.setItem('scheduleManager_currency', 'Ft');
-    }
+    localStorage.setItem('scheduleManager_currency', 'Ft');
     await cloudSyncSave();
   }
   

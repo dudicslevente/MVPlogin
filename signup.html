@@ -154,8 +154,7 @@
         // If user is already signed in (no email confirmation required)
         if (res && res.session) {
           console.log('Signup successful, user already signed in');
-          // Even if signed in, still wait a moment for profile update
-          await new Promise(resolve => setTimeout(resolve, 4000));
+          // Redirect immediately to index.html
           console.log('Redirecting to index...');
           window.location.href = 'index.html';
         }

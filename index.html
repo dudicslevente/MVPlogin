@@ -186,12 +186,11 @@
                     return;
                 }
                 
-                // Optimized loading sequence - start app initialization immediately
-                // Load app state and profile data in parallel
-                const appStatePromise = loadAppStateAndSync();
-                const profileDataPromise = loadProfileDataAfterSignup();
+                // Load app state and profile data first to ensure clean state for new users
+                await loadAppStateAndSync();
+                await loadProfileDataAfterSignup();
                 
-                // Initialize the app immediately without waiting for data sync
+                // Initialize the app after data sync is complete
                 const script = document.createElement('script');
                 script.src = 'app.js';
                 script.onload = () => {
@@ -203,9 +202,6 @@
                     }
                 };
                 document.body.appendChild(script);
-                
-                // Continue with data loading in background
-                await Promise.all([appStatePromise, profileDataPromise]);
                 
             } catch (e) {
                 console.error('Auth gate error', e);
