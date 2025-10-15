@@ -83,6 +83,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script>
+        // Mobile detection - removed redirect to non-existent mobile.html
+        // Mobile notification will be handled by the app.js ScheduleManager class
+        
         // Auth gate and deferred app load
         window.BLOCK_APP_INIT = true;
         
@@ -1047,6 +1050,27 @@
     <!-- Notification System -->
     <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2">
         <!-- Notifications will be added here -->
+    </div>
+
+    <!-- Mobile Notification Modal -->
+    <div id="mobileNotificationModal" class="modal hidden">
+        <div class="modal-content max-w-md">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-yellow-100 rounded-lg mr-3">
+                    <i data-feather="alert-triangle" class="text-yellow-600 w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Jobb élmény asztali eszközön</h3>
+            </div>
+            <p class="text-gray-600 mb-6">Az alkalmazás jelenlegi fejlesztési szakaszában az asztali számítógépen való használat javasolt a legjobb élmény érdekében.</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeMobileNotification()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Tovább a mobil verzióra
+                </button>
+                <button onclick="redirectToDesktop()" class="px-4 py-2 bg-brand-color text-white rounded-md hover:bg-brand-color">
+                    Megértettem
+                </button>
+            </div>
+        </div>
     </div>
 
 </body>

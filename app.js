@@ -38,6 +38,9 @@ class ScheduleManager {
         this.loadTheme();
         this.setupEventListeners();
         
+        // Check for mobile and show notification if needed
+        this.checkMobileAndNotify();
+        
         // Render critical UI immediately
         this.renderEmployeeList();
         this.renderSchedule();
@@ -4554,6 +4557,59 @@ avigation
         document.getElementById('confirmationModal').classList.remove('active');
     }
 
+    // Mobile detection and notification
+    checkMobileAndNotify() {
+        // Check if user is on a mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Check if notification has already been shown to this user
+        const mobileNotificationShown = localStorage.getItem('scheduleManager_mobileNotificationShown');
+        
+        // Show notification if on mobile and not shown before
+        if (isMobile && !mobileNotificationShown) {
+            this.showMobileNotification();
+        }
+    }
+
+    showMobileNotification() {
+        const modal = document.getElementById('mobileNotificationModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+            
+            // Initialize feather icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+    }
+
+    closeMobileNotification() {
+        const modal = document.getElementById('mobileNotificationModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+            
+            // Mark notification as shown in localStorage
+            localStorage.setItem('scheduleManager_mobileNotificationShown', 'true');
+        }
+    }
+
+    redirectToDesktop() {
+        // Mark notification as shown in localStorage
+        localStorage.setItem('scheduleManager_mobileNotificationShown', 'true');
+        
+        // Close the modal
+        const modal = document.getElementById('mobileNotificationModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+        }
+        
+        // Show a notification that the user can continue
+        this.showNotification('Folytathatod a használatot, de az asztali verzió javasolt a legjobb élmény érdekében.', 'info');
+    }
+
     // Department Management
     openDepartmentModal() {
         const modal = document.getElementById('departmentModal');
@@ -5316,9 +5372,18 @@ function handleProfilePicChange(event) {
     }
 }
 
-// Global function for dark mode toggle
+// Global functions for dark mode toggle
 function toggleDarkMode() {
     scheduleManager.toggleDarkMode();
+}
+
+// Global functions for mobile notification
+function closeMobileNotification() {
+    scheduleManager.closeMobileNotification();
+}
+
+function redirectToDesktop() {
+    scheduleManager.redirectToDesktop();
 }
 
 // Global functions for statistics view switching

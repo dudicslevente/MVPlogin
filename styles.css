@@ -1821,3 +1821,31 @@ table thead.bg-gray-50:hover {
     color: #fecaca !important;
     margin-top: 0 !important; /* Ensure proper vertical alignment with day number */
 }
+
+/* Mobile Notification Modal */
+#mobileNotificationModal .modal-content {
+    border: 2px solid var(--brand-color);
+}
+
+#mobileNotificationModal .flex.items-center {
+    border-bottom: 1px solid var(--brand-color);
+    padding-bottom: 1rem;
+}
+
+/* Dark mode mobile notification modal */
+[data-theme="dark"] #mobileNotificationModal .modal-content {
+    background-color: var(--bg-primary);
+    border-color: var(--brand-color);
+}
+
+[data-theme="dark"] #mobileNotificationModal .flex.items-center {
+    border-color: var(--brand-color);
+}
+
+[data-theme="dark"] #mobileNotificationModal .text-gray-900 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #mobileNotificationModal .text-gray-600 {
+    color: var(--text-secondary);
+}
