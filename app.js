@@ -4646,20 +4646,6 @@ avigation
             }
         }
     }
-    // Check if this is the user's first login and show welcome notification
-    checkFirstLoginAndWelcome() {
-        // Check if welcome notification has already been shown to this user
-        const welcomeNotificationShown = localStorage.getItem('scheduleManager_welcomeNotificationShown');
-        
-        // Show welcome notification if not shown before
-        if (!welcomeNotificationShown) {
-            // Small delay to ensure UI is ready
-            setTimeout(() => {
-                this.showWelcomeNotification();
-            }, 1000);
-        }
-    }
-
     showWelcomeNotification() {
         const modal = document.getElementById('welcomeModal');
         if (modal) {
@@ -4670,17 +4656,6 @@ avigation
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
-        }
-    }
-
-    closeWelcomeModal() {
-        const modal = document.getElementById('welcomeModal');
-        if (modal) {
-            modal.classList.remove('active');
-            modal.classList.add('hidden');
-            
-            // Mark welcome notification as shown in localStorage
-            localStorage.setItem('scheduleManager_welcomeNotificationShown', 'true');
         }
     }
 
