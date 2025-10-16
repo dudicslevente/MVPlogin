@@ -2375,11 +2375,13 @@ avigation
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex space-x-2">
-                        <button onclick="scheduleManager.editEmployee('${employee.id}')" class="action-btn edit" title="Alkalmazott Szerkesztése">
-                            <i data-feather="edit-2" class="w-4 h-4"></i>
+                        <button onclick="scheduleManager.editEmployee('${employee.id}')" class="action-btn edit px-4 py-2 rounded-md text-sm flex items-center" title="Alkalmazott Szerkesztése">
+                            <i data-feather="edit-2" class="w-4 h-4 mr-2"></i>
+                            Szerkesztés
                         </button>
-                        <button onclick="scheduleManager.deleteEmployee('${employee.id}')" class="action-btn delete" title="Alkalmazott Törlése">
-                            <i data-feather="trash-2" class="w-4 h-4"></i>
+                        <button onclick="scheduleManager.deleteEmployee('${employee.id}')" class="action-btn delete px-4 py-2 rounded-md text-sm flex items-center" title="Alkalmazott Törlése">
+                            <i data-feather="trash-2" class="w-4 h-4 mr-2"></i>
+                            Törlés
                         </button>
                     </div>
                 </td>
@@ -5000,8 +5002,9 @@ avigation
             deptItem.innerHTML = `
                 <div class="department-name">${dept.charAt(0).toUpperCase() + dept.slice(1)}</div>
                 <div class="department-actions">
-                    <button onclick="scheduleManager.deleteDepartment('${dept}')" class="action-btn delete" title="Részleg Törlése">
-                        <i data-feather="trash-2" class="w-4 h-4"></i>
+                    <button onclick="scheduleManager.deleteDepartment('${dept}')" class="action-btn delete px-4 py-2 rounded-md text-sm flex items-center" title="Részleg Törlése">
+                        <i data-feather="trash-2" class="w-4 h-4 mr-2"></i>
+                        Törlés
                     </button>
                 </div>
             `;

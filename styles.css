@@ -869,12 +869,13 @@ table thead.bg-gray-50:hover {
 
 /* Action Button Styles */
 .action-btn {
-    padding: 0.375rem;
-    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
     transition: all 0.2s ease;
     cursor: pointer;
     border: none;
     background: none;
+    font-size: 0.875rem;
 }
 
 .action-btn:hover {
@@ -897,6 +898,19 @@ table thead.bg-gray-50:hover {
 .action-btn.delete:hover {
     background-color: #fee2e2;
     color: #dc2626;
+}
+
+/* Dark mode action button styles */
+[data-theme="dark"] .action-btn:hover {
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .action-btn.edit:hover {
+    background-color: #1e3a8a !important;
+}
+
+[data-theme="dark"] .action-btn.delete:hover {
+    background-color: #7f1d1d !important;
 }
 
 /* Employee Card with Profile Picture */
