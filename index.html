@@ -191,7 +191,14 @@
                 
                 // Load app state and profile data first to ensure clean state for new users
                 await loadAppStateAndSync();
-                await loadProfileDataAfterSignup();
+                const profileData = await loadProfileDataAfterSignup();
+                
+                // Check if profile needs sync and perform it
+                const needsSync = localStorage.getItem('scheduleManager_profile_needs_sync') === 'true';
+                if (needsSync) {
+                    console.log('Performing delayed profile sync...');
+                    await performDelayedProfileSync();
+                }
                 
                 // Initialize the app after data sync is complete
                 const script = document.createElement('script');
@@ -211,6 +218,38 @@
                 window.location.href = 'login.html';
             }
         });
+        
+        // Function to perform delayed profile sync if needed
+        async function performDelayedProfileSync() {
+            try {
+                const session = await getSession();
+                if (!session) return;
+                
+                const userId = session.user.id;
+                const storedUsername = localStorage.getItem('scheduleManager_username');
+                
+                if (storedUsername) {
+                    // Try to update the profile with the stored username
+                    const { data: updateData, error: updateError } = await window.supabaseClient
+                        .from('profiles')
+                        .update({ 
+                            username: storedUsername, 
+                            display_name: storedUsername 
+                        })
+                        .eq('id', userId)
+                        .select();
+                    
+                    if (!updateError && updateData && updateData.length > 0) {
+                        console.log('Successfully synced profile for user:', userId);
+                        localStorage.removeItem('scheduleManager_profile_needs_sync');
+                    } else {
+                        console.error('Failed to sync profile:', updateError);
+                    }
+                }
+            } catch (syncError) {
+                console.error('Error in delayed profile sync:', syncError);
+            }
+        }
     </script>
 </head>
 

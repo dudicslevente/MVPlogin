@@ -125,115 +125,46 @@
   <script>
     if (typeof feather !== 'undefined') feather.replace();
 
+    // Ensure session and redirect if not logged in
     async function ensureSession() {
       const session = await getSession();
       if (!session) {
         window.location.href = 'login.html';
         return null;
       }
+      // Check if profile needs sync and perform it
+      const needsSync = localStorage.getItem('scheduleManager_profile_needs_sync') === 'true';
+      if (needsSync) {
+        console.log('Performing delayed profile sync on profile page...');
+        await performDelayedProfileSync();
+      }
       return session;
     }
 
+    // Load profile data into form
     async function loadProfile() {
-      console.log('Loading profile...');
       const session = await ensureSession();
       if (!session) return;
       const userId = session.user.id;
-      console.log('User ID:', userId);
-      
-      // Check if localStorage is available (it might be disabled in private mode)
-      let localStorageAvailable = true;
-      try {
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-      } catch (e) {
-        localStorageAvailable = false;
-        console.log('localStorage is not available (private mode or disabled)');
-      }
-      
-      // Try to get username from localStorage first, fallback to database
-      let displayUsername = '';
-      let displayName = '';
-      
-      if (localStorageAvailable) {
-        displayUsername = localStorage.getItem('scheduleManager_username') || '';
-        displayName = localStorage.getItem('scheduleManager_displayName') || '';
-        
-        // Debug: Log the values to console
-        console.log('localStorageUsername:', displayUsername);
-        console.log('localStorageDisplayName:', displayName);
-      }
-      
-      // Load profile data from database
-      console.log('Loading profile from database...');
-      const { data, error } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).maybeSingle();
+      const { data, error } = await window.supabaseClient
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
       if (error) {
-        console.error('Database error:', error);
+        console.error(error);
+        return;
       }
-      const profile = data || {};
-      console.log('Database profile data:', profile);
-      
-      // If localStorage is not available or empty, use database values
-      if (!localStorageAvailable || !displayUsername) {
-        displayUsername = profile.username || '';
-      }
-      if (!localStorageAvailable || !displayName) {
-        displayName = profile.display_name || '';
-      }
-      
-      // Display the username (from localStorage if available, otherwise from database)
-      console.log('Displaying username:', displayUsername);
-      console.log('Displaying display name:', displayName);
-      document.getElementById('username').value = displayUsername;
-      document.getElementById('displayName').value = displayName;
-      document.getElementById('avatarUrl').value = profile.avatar_url || '';
-      
-      // Update avatar preview
-      const previewEl = document.getElementById('avatarPreview');
-      const placeholderEl = document.getElementById('avatarPlaceholder');
-      if (profile.avatar_url) {
-        previewEl.src = profile.avatar_url;
-        previewEl.style.display = 'block';
-        if (placeholderEl) placeholderEl.style.display = 'none';
-      } else {
-        previewEl.style.display = 'none';
-        if (placeholderEl) placeholderEl.style.display = 'block';
-      }
-      
-      // Init currency select from localStorage (synced via app_state)
-      try {
-        const cur = localStorage.getItem('scheduleManager_currency') || 'Ft';
-        const sel = document.getElementById('currencySelect');
-        if (sel) sel.value = ['Ft','€','$'].includes(cur) ? cur : 'Ft';
-      } catch (_) {}
-    }
-
-    // Upload when a file is selected
-    document.addEventListener('change', async (e) => {
-      if (e.target && e.target.id === 'avatarFile' && e.target.files && e.target.files[0]) {
-        const statusBox = document.getElementById('statusBox');
-        statusBox.classList.add('hidden'); statusBox.textContent='';
-        const file = e.target.files[0];
-        try {
-          const url = await window.uploadProfileAvatar(file);
-          document.getElementById('avatarUrl').value = url;
-          const preview = document.getElementById('avatarPreview');
-          const placeholder = document.getElementById('avatarPlaceholder');
-          preview.src = url; preview.style.display = 'block';
-          if (placeholder) placeholder.style.display = 'none';
-          const nameEl = document.getElementById('avatarFilename');
-          if (nameEl) nameEl.textContent = file.name;
-          statusBox.textContent = 'Kép feltöltve. Kattints a "Változások Mentése" gombra a profilod frissítéséhez.';
-          statusBox.classList.remove('hidden');
-          statusBox.classList.remove('text-red-600');
-          statusBox.classList.add('text-green-600');
-        } catch (err) {
-          statusBox.textContent = err.message || 'Kép feltöltés sikertelen';
-          statusBox.classList.remove('hidden');
-          statusBox.classList.add('text-red-600');
+      if (data) {
+        document.getElementById('username').value = data.username || '';
+        document.getElementById('displayName').value = data.display_name || '';
+        document.getElementById('avatarUrl').value = data.avatar_url || '';
+        if (data.avatar_url) {
+          document.getElementById('avatarPreview').src = data.avatar_url;
+          document.getElementById('avatarPlaceholder').style.display = 'none';
         }
       }
-    });
+    }
 
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
       e.preventDefault();

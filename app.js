@@ -5463,3 +5463,20 @@ document.addEventListener('DOMContentLoaded', function() {
     scheduleManager = new ScheduleManager();
     try { window.scheduleManager = scheduleManager; } catch (_) {}
 });
+
+// Add periodic profile check
+document.addEventListener('DOMContentLoaded', function() {
+    // Run periodic profile check every 5 minutes
+    setInterval(() => {
+        if (typeof window.periodicProfileCheck === 'function') {
+            window.periodicProfileCheck();
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    // Also run it once after app loads (with a delay to ensure everything is ready)
+    setTimeout(() => {
+        if (typeof window.periodicProfileCheck === 'function') {
+            window.periodicProfileCheck();
+        }
+    }, 15000); // 15 seconds after app loads
+});

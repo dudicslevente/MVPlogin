@@ -46,66 +46,104 @@ async function signUpWithEmail(email, password, username) {
     console.log('Stored username in localStorage:', username);
   }
   
-  // Attempt to update profile with the username
+  // Attempt to update profile with the username using the new robust approach
   if (user && username) {
-    // Use a more aggressive approach to ensure profile is updated
-    // Try multiple times with different strategies
-    const updateProfile = async (attempt) => {
-      if (attempt > 5) { // Reduced from 10 to 5 attempts
-        console.error('Failed to update profile after 5 attempts');
-        return;
-      }
+    try {
+      // Use the new database function for more reliable profile updating
+      console.log(`Updating profile for user ${user.id} with username ${username}`);
       
+      // Wait a bit for auth to fully complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Try to use our custom database function first
       try {
-        // Wait a bit for auth to fully complete and trigger to run
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Reduced from 1500ms to 500ms
+        const { data: rpcData, error: rpcError } = await window.supabaseClient
+          .rpc('update_user_profile', {
+            user_id: user.id,
+            user_username: username,
+            user_display_name: username
+          });
         
-        console.log(`Attempt ${attempt} to update profile`);
-        
-        // Try to update the existing profile (created by the trigger)
-        let { data: updateData, error: updateError } = await window.supabaseClient
-          .from('profiles')
-          .update({ username, display_name: username, welcome_notification_shown: false })
-          .eq('id', user.id)
-          .select();
-        
-        // Check if update was successful
-        if (!updateError && updateData && updateData.length > 0) {
-          console.log('Profile updated successfully');
-          return;
-        }
-        
-        // If update failed, try insert (profile might not exist yet)
-        if (updateError || !updateData || updateData.length === 0) {
-          console.log('Update failed, trying insert:', updateError);
-          const { data: insertData, error: insertError } = await window.supabaseClient
-            .from('profiles')
-            .insert({ id: user.id, username, display_name: username, welcome_notification_shown: false })
-            .select();
-          
-          if (!insertError && insertData && insertData.length > 0) {
-            console.log('Profile created successfully');
-            return;
-          } else if (insertError) {
-            console.error('Profile creation error:', insertError);
-            // Try again with a different approach
-            setTimeout(() => updateProfile(attempt + 1), 1000); // Reduced from 2000ms to 1000ms
-          }
+        if (!rpcError && rpcData && rpcData.success) {
+          console.log('Profile updated successfully using RPC:', rpcData.message);
         } else {
-          console.log('Profile updated successfully');
+          throw new Error(`RPC failed: ${rpcError?.message || 'Unknown error'}`);
         }
-      } catch (err) {
-        console.error(`Error updating profile (attempt ${attempt}):`, err);
-        
-        // Try again
-        setTimeout(() => updateProfile(attempt + 1), 1000); // Reduced from 2000ms to 1000ms
+      } catch (rpcError) {
+        console.log('RPC approach failed, falling back to direct update:', rpcError.message);
+        // Fallback to direct update approach
+        await updateProfileDirectly(user.id, username);
       }
-    };
-    
-    // Start the update process
-    setTimeout(() => updateProfile(1), 200); // Reduced from 500ms to 200ms
+    } catch (profileError) {
+      console.error('Critical error updating user profile:', profileError);
+      // Even if profile update fails, we still want to complete signup
+      // The user's username will be stored in localStorage and synced later
+      // Add a special flag to indicate profile needs sync
+      localStorage.setItem('scheduleManager_profile_needs_sync', 'true');
+    }
   }
   return data;
+}
+
+// New function for direct profile updating with better error handling
+async function updateProfileDirectly(userId, username) {
+  const maxAttempts = 5;
+  let attempt = 1;
+  let success = false;
+  
+  while (attempt <= maxAttempts && !success) {
+    try {
+      console.log(`Direct update attempt ${attempt} for user ${userId}`);
+      
+      // Wait a bit between attempts
+      if (attempt > 1) {
+        await new Promise(resolve => setTimeout(resolve, 300 * attempt));
+      }
+      
+      // Try to update the existing profile
+      let { data: updateData, error: updateError } = await window.supabaseClient
+        .from('profiles')
+        .update({ 
+          username: username, 
+          display_name: username, 
+          welcome_notification_shown: false 
+        })
+        .eq('id', userId)
+        .select();
+      
+      // Check if update was successful
+      if (!updateError && updateData && updateData.length > 0) {
+        console.log('Profile updated successfully for user:', userId);
+        success = true;
+      } else {
+        // If update failed, try insert
+        console.log('Update failed, trying insert for user:', userId, updateError);
+        const { data: insertData, error: insertError } = await window.supabaseClient
+          .from('profiles')
+          .insert({ 
+            id: userId, 
+            username: username, 
+            display_name: username, 
+            welcome_notification_shown: false 
+          })
+          .select();
+        
+        if (!insertError && insertData && insertData.length > 0) {
+          console.log('Profile created successfully for user:', userId);
+          success = true;
+        } else {
+          throw new Error(`Failed to update or create profile: ${insertError?.message || 'Unknown error'}`);
+        }
+      }
+    } catch (err) {
+      console.error(`Error in direct update (attempt ${attempt}):`, err);
+      if (attempt === maxAttempts) {
+        // Last attempt failed, throw the error
+        throw new Error(`Failed to update profile after ${maxAttempts} attempts: ${err.message}`);
+      }
+      attempt++;
+    }
+  }
 }
 
 // Function to load profile data after signup or login
@@ -116,9 +154,34 @@ async function loadProfileDataAfterSignup() {
     
     const userId = session.user.id;
     
+    // Check if profile needs sync from localStorage
+    const needsSync = localStorage.getItem('scheduleManager_profile_needs_sync') === 'true';
+    const storedUsername = localStorage.getItem('scheduleManager_username');
+    
+    if (needsSync && storedUsername) {
+      try {
+        // Try to update the profile with the stored username
+        const { data: updateData, error: updateError } = await window.supabaseClient
+          .from('profiles')
+          .update({ 
+            username: storedUsername, 
+            display_name: storedUsername 
+          })
+          .eq('id', userId)
+          .select();
+        
+        if (!updateError && updateData && updateData.length > 0) {
+          console.log('Successfully synced profile for user:', userId);
+          localStorage.removeItem('scheduleManager_profile_needs_sync');
+        }
+      } catch (syncError) {
+        console.error('Error syncing profile:', syncError);
+      }
+    }
+    
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 10; // Reduced from 20 to 10 attempts
+    const maxAttempts = 10;
     let data, error;
     
     do {
@@ -132,23 +195,23 @@ async function loadProfileDataAfterSignup() {
         console.error(`Error loading profile (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         // This might happen if the async update from signup hasn't completed yet
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } else if ((!data.username || data.username === '') && (!data.display_name || data.display_name === '')) {
         // Profile exists but is empty, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1500ms to 500ms
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } else {
         // Success, break out of loop
@@ -201,7 +264,7 @@ async function loadProfileDataIntoLocalStorage() {
     
     // Try to load profile data with retries
     let attempts = 0;
-    const maxAttempts = 5; // Reduced from 10 to 5 attempts
+    const maxAttempts = 5;
     let data, error;
     
     do {
@@ -215,17 +278,17 @@ async function loadProfileDataIntoLocalStorage() {
         console.error(`Error loading profile data (attempt ${attempts + 1}):`, error);
         if (attempts < maxAttempts - 1) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } else if (!data) {
         // Profile doesn't exist yet, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } else if (data.username && (data.username.startsWith('user_') || data.username.startsWith('temp_'))) {
         // Profile has temporary username, wait and retry
         if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } else {
         // Success, break out of loop
@@ -455,6 +518,88 @@ async function markWelcomeNotificationAsShown() {
   }
 }
 
+// Function to perform delayed profile sync if needed
+async function performDelayedProfileSync() {
+    try {
+        const session = await getSession();
+        if (!session) return;
+        
+        const userId = session.user.id;
+        const storedUsername = localStorage.getItem('scheduleManager_username');
+        
+        if (storedUsername) {
+            // Try to update the profile with the stored username
+            const { data: updateData, error: updateError } = await window.supabaseClient
+                .from('profiles')
+                .update({ 
+                    username: storedUsername, 
+                    display_name: storedUsername 
+                })
+                .eq('id', userId)
+                .select();
+            
+            if (!updateError && updateData && updateData.length > 0) {
+                console.log('Successfully synced profile for user:', userId);
+                localStorage.removeItem('scheduleManager_profile_needs_sync');
+                return true;
+            } else {
+                console.error('Failed to sync profile:', updateError);
+                return false;
+            }
+        }
+        return false;
+    } catch (syncError) {
+        console.error('Error in delayed profile sync:', syncError);
+        return false;
+    }
+}
+
+// Function to periodically check and fix profile issues
+async function periodicProfileCheck() {
+  try {
+    const session = await getSession();
+    if (!session) return;
+    
+    const userId = session.user.id;
+    const storedUsername = localStorage.getItem('scheduleManager_username');
+    
+    // If we don't have a stored username, nothing to check
+    if (!storedUsername) return;
+    
+    // Check if profile needs sync
+    const needsSync = localStorage.getItem('scheduleManager_profile_needs_sync') === 'true';
+    if (needsSync) {
+      console.log('Performing periodic profile sync...');
+      await performDelayedProfileSync();
+      return;
+    }
+    
+    // Additionally, check if the database profile has a temporary username
+    const { data: profileData, error: profileError } = await window.supabaseClient
+      .from('profiles')
+      .select('username')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (!profileError && profileData) {
+      // If the database has a temporary username but we have a real one in localStorage
+      if ((profileData.username.startsWith('user_') || profileData.username.startsWith('pending_') || profileData.username.startsWith('temp_')) 
+          && storedUsername 
+          && !storedUsername.startsWith('user_') 
+          && !storedUsername.startsWith('pending_') 
+          && !storedUsername.startsWith('temp_')) {
+        console.log('Detected temporary username in database, syncing with localStorage value...');
+        const syncResult = await performDelayedProfileSync();
+        if (syncResult) {
+          console.log('Successfully fixed temporary username issue');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in periodic profile check:', err);
+  }
+}
+
 // Expose to window for app.js hooks
 window.cloudSyncSave = cloudSyncSave;
 window.loadAppStateAndSync = loadAppStateAndSync;
@@ -467,6 +612,8 @@ window.loadProfileDataAfterSignup = loadProfileDataAfterSignup;
 window.loadProfileDataIntoLocalStorage = loadProfileDataIntoLocalStorage;
 window.checkAndMarkWelcomeNotification = checkAndMarkWelcomeNotification;
 window.markWelcomeNotificationAsShown = markWelcomeNotificationAsShown;
+window.performDelayedProfileSync = performDelayedProfileSync;
+window.periodicProfileCheck = periodicProfileCheck;
 
 // Convenience: logout and redirect to login
 window.logoutUser = async function() {
