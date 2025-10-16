@@ -46,9 +46,14 @@
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
   <div class="w-full max-w-md mx-auto p-6">
     <div class="bg-white shadow rounded-lg p-6 border">
-      <div class="flex items-center mb-4">
-        <i data-feather="calendar" class="text-brand-color mr-2"></i>
-        <h1 class="text-xl font-bold text-brand-color">Schedulix</h1>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center">
+          <i data-feather="calendar" class="text-brand-color mr-2"></i>
+          <h1 class="text-xl font-bold text-brand-color">Schedulix</h1>
+        </div>
+        <button onclick="toggleDarkMode()" class="p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100" title="Sötét mód váltása">
+          <i data-feather="moon" class="w-5 h-5" id="darkModeIcon"></i>
+        </button>
       </div>
       <h2 class="text-lg font-semibold mb-1 text-brand-color">Bejelentkezés</h2>
       <p class="text-sm text-gray-500 mb-6">Jelentkezz be az alkalmazottak és beosztások kezeléséhez.</p>
@@ -73,6 +78,38 @@
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script>
     if (typeof feather !== 'undefined') feather.replace();
+
+    // Theme toggle function
+    function toggleDarkMode() {
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const newTheme = isDarkMode ? 'light' : 'dark';
+      localStorage.setItem('scheduleManager_theme', newTheme);
+      
+      if (newTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('darkModeIcon').setAttribute('data-feather', 'sun');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('darkModeIcon').setAttribute('data-feather', 'moon');
+      }
+      
+      // Re-render feather icons
+      if (typeof feather !== 'undefined') {
+        feather.replace();
+      }
+    }
+
+    // Initialize dark mode icon based on current theme
+    document.addEventListener('DOMContentLoaded', function() {
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+      const icon = document.getElementById('darkModeIcon');
+      if (icon) {
+        icon.setAttribute('data-feather', isDarkMode ? 'sun' : 'moon');
+        if (typeof feather !== 'undefined') {
+          feather.replace();
+        }
+      }
+    });
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
