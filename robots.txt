@@ -2,8 +2,8 @@ User-agent: *
 Allow: /
 Allow: /index.html
 Allow: /index_angol.html
+Allow: /signup.html
 Disallow: /login.html
-Disallow: /signup.html
 Disallow: /profile.html
 Disallow: /supabase.js
 Disallow: /app.js

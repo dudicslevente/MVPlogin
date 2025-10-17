@@ -1,3 +1,7 @@
+# Domain redirects - redirect all non-www to www
+http://schedulix.hu/* https://www.schedulix.hu/:splat 301!
+https://schedulix.hu/* https://www.schedulix.hu/:splat 301!
+
 # 1️⃣ Serve all .html files without showing .html in the URL
 /*   /:splat.html   200
 
