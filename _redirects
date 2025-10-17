@@ -1,15 +1,11 @@
-# 1) Domain canonicalization -> non-www + http -> https + www
-http://schedulix.hu/*   https://www.schedulix.hu/:splat   301!
-https://schedulix.hu/*  https://www.schedulix.hu/:splat   301!
+# 1) Redirect explicit .html URLs to clean URLs (external redirect)
+/*.html    /:splat    301!
 
-# 2) Redirect explicit .html URLs to clean URLs
-/*.html   /:splat   301!
-
-# 3) Language routes (serve the correct index files)
+# 2) Language routes (serve the correct index files if you need them)
  /en       /index_angol.html   200
  /en/*     /index_angol.html   200
  /hu       /index.html         200
  /hu/*     /index.html         200
 
-# 4) Catch-all rewrite: serve .html files for clean URLs
+# 3) Catch-all internal rewrite: serve .html files for clean URLs
 /*   /:splat.html   200
