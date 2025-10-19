@@ -7,8 +7,9 @@
  /hu       /index.html         200
  /hu/*     /index.html         200
 
-# 3) Favicon specific rule
+# 3) Favicon specific rules
 /favicon.ico    /favicon.ico    200
+/favicon-2023.ico    /favicon-2023.ico    200
 
 # 4) Catch-all internal rewrite: serve .html files for clean URLs
 /*   /:splat.html   200

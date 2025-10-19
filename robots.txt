@@ -3,8 +3,14 @@ Allow: /
 Allow: /index.html
 Allow: /index_angol.html
 Allow: /signup.html
-Disallow: /login.html
-Disallow: /profile.html
+Allow: /login.html
+Allow: /profile.html
+Allow: /google-search.html
+Allow: /favicon-test.html
+Allow: /favicon.ico
+Allow: /favicon-2023.ico
+Allow: /s-atmenetes.png
+Allow: /s-atmenetes.svg
 Disallow: /supabase.js
 Disallow: /app.js
 Disallow: /debug.js
